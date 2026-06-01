@@ -24,7 +24,7 @@ const shell = ({ title, description = "", id = "", inner }) => `<!doctype html>
 </head>
 <body>
   <main class="shell">
-    <div class="topbar"><a class="brand" href="/">MDShare</a><span class="meta">${id ? `/s/${escapeHtml(id)}` : ""}</span></div>
+    <div class="topbar"><a class="brand" href="/">MDShare</a></div>
     ${inner}
   </main>
 </body>
@@ -60,7 +60,6 @@ const gatePage = ({ id, title = "Protected share", error = "" }) =>
     title,
     id,
     inner: `<section class="card">
-      <p class="meta">${escapeHtml(id ? `/s/${id}` : "")}</p>
       <h1>🔒 Protected share</h1>
       <p>Share này được bảo vệ bằng mật khẩu. Nhập mật khẩu để xem nội dung.</p>
       <form method="POST" action="/s/${escapeHtml(id)}">
