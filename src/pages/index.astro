@@ -1,0 +1,37 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const modules = import.meta.glob("../content/shares/*.{md,mdx}", { eager: true });
+const shares = Object.entries(modules)
+  .map(([path, mod]: [string, any]) => {
+    const slug = path.split("/").pop()?.replace(/\.(md|mdx)$/i, "") ?? "";
+    return { slug, frontmatter: mod.frontmatter ?? {} };
+  })
+  .filter((share) => share.frontmatter.public !== false)
+  .sort((a, b) => String(b.frontmatter.createdAt ?? "").localeCompare(String(a.frontmatter.createdAt ?? "")));
+---
+<BaseLayout title="MD Share" description="Share Markdown files as clean public pages.">
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow">Free Markdown sharing</div>
+      <h1>Share `.md` files as beautiful public pages.</h1>
+      <p class="lead">
+        Drop Markdown files into <code>src/content/shares</code>, push to GitHub, and Cloudflare Pages publishes clean URLs for readers.
+      </p>
+    </section>
+
+    {shares.length > 0 ? (
+      <section class="share-grid" aria-label="Published markdown shares">
+        {shares.map(({ slug, frontmatter }) => (
+          <a class="card" href={`/p/${slug}/`}>
+            <h2>{frontmatter.title ?? slug}</h2>
+            {frontmatter.description && <p>{frontmatter.description}</p>}
+            <span class="meta">Open /p/{slug}</span>
+          </a>
+        ))}
+      </section>
+    ) : (
+      <p class="empty">No public Markdown files yet. Add one under <code>src/content/shares</code>.</p>
+    )}
+  </main>
+</BaseLayout>
