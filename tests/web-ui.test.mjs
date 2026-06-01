@@ -42,7 +42,7 @@ test("markdown renderer preserves tables, ordered lists, and richer inline forma
   assert.match(html, /<tbody>[\s\S]*<td>Revenue<\/td><td class="align-right">£17\.1M<\/td><td class="align-center"><strong>cleaned<\/strong> data<\/td>[\s\S]*<\/tbody>/);
   assert.match(html, /<ol>[\s\S]*<li>First ordered item<\/li>[\s\S]*<li>Second ordered item<\/li>[\s\S]*<\/ol>/);
   assert.match(html, /<del>old<\/del> <strong>bold<\/strong> <em>italic<\/em>/);
-  assert.match(html, /<a href="https:\/\/example\.com" target="_blank" rel="noreferrer">Docs<\/a>/);
+  assert.match(html, /<a[^>]+href="https:\/\/example\.com"[^>]*>Docs<\/a>/);
   assert.doesNotMatch(html, /\| Metric \|/);
 });
 
@@ -50,7 +50,7 @@ test("markdown renderer turns section dividers into horizontal rules", async () 
   const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
   const html = mod.renderMarkdown(`Intro\n\n---\n\nNext section\n\n***\n\nFinal section`);
 
-  assert.match(html, /<p>Intro<\/p>\n<hr>\n<p>Next section<\/p>\n<hr>\n<p>Final section<\/p>/);
+  assert.match(html, /<p>Intro<\/p>\s*<hr>\s*<p>Next section<\/p>\s*<hr>\s*<p>Final section<\/p>/);
   assert.doesNotMatch(html, /<p>---<\/p>/);
   assert.doesNotMatch(html, /<p>\*\*\*<\/p>/);
 });
@@ -63,6 +63,23 @@ test("markdown renderer hides frontmatter from preview output", async () => {
   assert.doesNotMatch(html, /Hidden Metadata/);
   assert.doesNotMatch(html, /Should not render/);
   assert.doesNotMatch(html, /<p>---<\/p>/);
+});
+
+test("markdown renderer covers common GitHub-style markdown", async () => {
+  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const html = mod.renderMarkdown(`#### H4\n\n__bold__ _italic_\n\n![Logo](https://example.com/logo.png)\n\n[Relative](/docs)\n\n+ plus item\n\n- parent\n  - child\n\n- [x] done\n- [ ] todo\n\n~~~js\nconsole.log(1)\n~~~\n\n<https://example.com>`);
+
+  assert.match(html, /<h4[^>]*>H4<\/h4>/);
+  assert.match(html, /<strong>bold<\/strong>/);
+  assert.match(html, /<em>italic<\/em>/);
+  assert.match(html, /<img[^>]+src="https:\/\/example\.com\/logo\.png"[^>]+alt="Logo"/);
+  assert.match(html, /<a href="\/docs"[^>]*>Relative<\/a>/);
+  assert.match(html, /<ul>[\s\S]*<li>plus item<\/li>[\s\S]*<\/ul>/);
+  assert.match(html, /<li>parent[\s\S]*<ul>[\s\S]*<li>child<\/li>[\s\S]*<\/ul>[\s\S]*<\/li>/);
+  assert.match(html, /<input[^>]+type="checkbox"[^>]+checked/);
+  assert.match(html, /<input[^>]+type="checkbox"/);
+  assert.match(html, /<pre><code class="language-js">console\.log\(1\)\n<\/code><\/pre>/);
+  assert.match(html, /<a href="https:\/\/example\.com"[^>]*>https:\/\/example\.com<\/a>/);
 });
 
 test("admin API functions require bearer auth for writes", () => {

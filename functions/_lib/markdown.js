@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 const escapeHtml = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -16,161 +18,84 @@ const slugify = (value = "") =>
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "") || "section";
 
-const inlineMarkdown = (value = "") => {
-  let html = escapeHtml(value);
-  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/~~([^~]+)~~/g, "<del>$1</del>");
-  html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-  return html;
+const allowedTags = new Set([
+  "a", "blockquote", "br", "code", "del", "em", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "img", "input", "li", "ol", "p", "pre", "strong", "table", "tbody", "td", "th", "thead", "tr", "ul",
+]);
+const globalAttrs = new Set(["class", "id"]);
+const tagAttrs = {
+  a: new Set(["href", "title", "target", "rel"]),
+  code: new Set(["class"]),
+  img: new Set(["src", "alt", "title"]),
+  input: new Set(["type", "checked", "disabled"]),
+  th: new Set(["align", "class"]),
+  td: new Set(["align", "class"]),
 };
+const booleanAttrs = new Set(["checked", "disabled"]);
 
-const isTableDelimiter = (line = "") =>
-  /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
-
-const isTableRow = (line = "") => line.includes("|") && !/^\s*```/.test(line);
-
-const isHorizontalRule = (line = "") => /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line);
-
-function splitTableRow(line = "") {
-  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
-  return trimmed.split("|").map((cell) => cell.trim());
+function safeUrl(value = "", { image = false } = {}) {
+  const trimmed = String(value).trim();
+  if (trimmed.startsWith("/") || trimmed.startsWith("#")) return trimmed;
+  try {
+    const url = new URL(trimmed);
+    const allowed = image ? ["http:", "https:", "data:"] : ["http:", "https:", "mailto:", "tel:"];
+    if (allowed.includes(url.protocol)) return trimmed;
+  } catch {
+    return "";
+  }
+  return "";
 }
 
-function tableAlignments(delimiter = "") {
-  return splitTableRow(delimiter).map((cell) => {
-    const left = cell.startsWith(":");
-    const right = cell.endsWith(":");
-    if (left && right) return "center";
-    if (right) return "right";
-    return "left";
-  });
+function sanitizeAttributes(tag, rawAttrs = "") {
+  const allowed = new Set([...(tagAttrs[tag] || []), ...globalAttrs]);
+  const attrs = [];
+  for (const match of rawAttrs.matchAll(/([:@A-Za-z0-9_-]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'`=<>]+))?/g)) {
+    const name = match[1].toLowerCase();
+    if (!allowed.has(name)) continue;
+    let value = match[2] || "";
+    value = value.replace(/^['"]|['"]$/g, "");
+    if ((tag === "a" && name === "href") || (tag === "img" && name === "src")) {
+      value = safeUrl(value, { image: tag === "img" });
+      if (!value) continue;
+    }
+    if (tag === "input") {
+      if (name === "type" && value !== "checkbox") continue;
+      if (name === "disabled") value = "";
+    }
+    if ((tag === "th" || tag === "td") && name === "align") {
+      if (value === "right" || value === "center") attrs.push(`class="align-${value}"`);
+      continue;
+    }
+    if (name === "target" && value !== "_blank") continue;
+    if (booleanAttrs.has(name)) {
+      attrs.push(name);
+    } else {
+      attrs.push(`${name}="${escapeHtml(value)}"`);
+    }
+  }
+  if (tag === "a" && attrs.some((attr) => attr.startsWith("href=\"http")) && !attrs.some((attr) => attr.startsWith("rel="))) {
+    attrs.push('rel="noreferrer"');
+  }
+  if (tag === "a" && attrs.some((attr) => attr.startsWith("href=\"http")) && !attrs.some((attr) => attr.startsWith("target="))) {
+    attrs.push('target="_blank"');
+  }
+  if (tag === "input" && !attrs.includes("disabled")) attrs.push("disabled");
+  if (tag === "input") {
+    const rank = (attr) => (attr.startsWith("type=") ? 0 : attr === "checked" ? 1 : attr === "disabled" ? 2 : 3);
+    attrs.sort((a, b) => rank(a) - rank(b));
+  }
+  return attrs.length ? ` ${attrs.join(" ")}` : "";
 }
 
-const alignClass = (align) => (align === "right" || align === "center" ? ` class="align-${align}"` : "");
-
-export function renderMarkdown(markdown = "") {
-  const normalized = stripFrontmatter(markdown).body;
-  const lines = normalized.split("\n");
-  const html = [];
-  let paragraph = [];
-  let list = [];
-  let listType = "ul";
-  let inCode = false;
-  let codeLang = "";
-  let codeLines = [];
-
-  const flushParagraph = () => {
-    if (paragraph.length) {
-      html.push(`<p>${inlineMarkdown(paragraph.join(" ").trim())}</p>`);
-      paragraph = [];
-    }
-  };
-  const flushList = () => {
-    if (list.length) {
-      html.push(`<${listType}>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</${listType}>`);
-      list = [];
-      listType = "ul";
-    }
-  };
-  const flushBlocks = () => {
-    flushParagraph();
-    flushList();
-  };
-
-  const renderTableAt = (index) => {
-    if (!isTableRow(lines[index]) || !isTableDelimiter(lines[index + 1] || "")) return null;
-    const headers = splitTableRow(lines[index]);
-    const aligns = tableAlignments(lines[index + 1]);
-    const rows = [];
-    let cursor = index + 2;
-    while (cursor < lines.length && isTableRow(lines[cursor]) && lines[cursor].trim()) {
-      rows.push(splitTableRow(lines[cursor]));
-      cursor += 1;
-    }
-    const thead = `<thead><tr>${headers.map((cell, i) => `<th${alignClass(aligns[i])}>${inlineMarkdown(cell)}</th>`).join("")}</tr></thead>`;
-    const tbody = `<tbody>${rows
-      .map((row) => `<tr>${headers.map((_, i) => `<td${alignClass(aligns[i])}>${inlineMarkdown(row[i] || "")}</td>`).join("")}</tr>`)
-      .join("")}</tbody>`;
-    return { html: `<table>${thead}${tbody}</table>`, nextIndex: cursor };
-  };
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const codeFence = line.match(/^```\s*([\w-]+)?\s*$/);
-    if (codeFence) {
-      if (inCode) {
-        html.push(`<pre><code${codeLang ? ` class="language-${escapeHtml(codeLang)}"` : ""}>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
-        inCode = false;
-        codeLang = "";
-        codeLines = [];
-      } else {
-        flushBlocks();
-        inCode = true;
-        codeLang = codeFence[1] || "";
-      }
-      continue;
-    }
-    if (inCode) {
-      codeLines.push(line);
-      continue;
-    }
-
-    if (!line.trim()) {
-      flushBlocks();
-      continue;
-    }
-
-    const table = renderTableAt(index);
-    if (table) {
-      flushBlocks();
-      html.push(table.html);
-      index = table.nextIndex - 1;
-      continue;
-    }
-
-    if (isHorizontalRule(line)) {
-      flushBlocks();
-      html.push("<hr>");
-      continue;
-    }
-
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
-    if (heading) {
-      flushBlocks();
-      const level = heading[1].length;
-      const text = heading[2].trim();
-      html.push(`<h${level} id="${slugify(text)}">${inlineMarkdown(text)}</h${level}>`);
-      continue;
-    }
-
-    const unorderedItem = line.match(/^[-*]\s+(.+)$/);
-    const orderedItem = line.match(/^\d+[.)]\s+(.+)$/);
-    if (unorderedItem || orderedItem) {
-      flushParagraph();
-      const nextType = orderedItem ? "ol" : "ul";
-      if (list.length && listType !== nextType) flushList();
-      listType = nextType;
-      list.push((unorderedItem || orderedItem)[1].trim());
-      continue;
-    }
-
-    const quote = line.match(/^>\s?(.+)$/);
-    if (quote) {
-      flushBlocks();
-      html.push(`<blockquote>${inlineMarkdown(quote[1].trim())}</blockquote>`);
-      continue;
-    }
-
-    paragraph.push(line.trim());
-  }
-
-  if (inCode) {
-    html.push(`<pre><code${codeLang ? ` class="language-${escapeHtml(codeLang)}"` : ""}>${escapeHtml(codeLines.join("\n"))}</code></pre>`);
-  }
-  flushBlocks();
-  return html.join("\n");
+function sanitizeHtml(html = "") {
+  return String(html)
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<\/?(?:script|style|iframe|object|embed|form)[\s\S]*?>/gi, (tag) => escapeHtml(tag))
+    .replace(/<\/?([A-Za-z][A-Za-z0-9-]*)([^>]*)>/g, (full, rawTag, rawAttrs = "") => {
+      const tag = rawTag.toLowerCase();
+      if (!allowedTags.has(tag)) return escapeHtml(full);
+      if (full.startsWith("</")) return `</${tag}>`;
+      return `<${tag}${sanitizeAttributes(tag, rawAttrs)}>`;
+    });
 }
 
 export function stripFrontmatter(markdown = "") {
@@ -192,4 +117,32 @@ export function stripFrontmatter(markdown = "") {
   return { data, body };
 }
 
-export { escapeHtml, slugify };
+function textFromHtml(html = "") {
+  return String(html).replace(/<[^>]*>/g, "").replace(/&[#A-Za-z0-9]+;/g, " ").trim();
+}
+
+function normalizeRenderedHtml(html = "") {
+  return String(html)
+    .replace(/<li><p>([\s\S]*?)<\/p>\s*(<ul>)/g, "<li>$1$2")
+    .replace(/<li><p>([\s\S]*?)<\/p>\s*<\/li>/g, "<li>$1</li>")
+    .replace(/>\s*(?:\r?\n)\s*</g, "><")
+    .trim();
+}
+
+function addHeadingIds(html = "") {
+  return String(html).replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (_match, level, content) => {
+    return `<h${level} id="${slugify(textFromHtml(content))}">${content}</h${level}>`;
+  });
+}
+
+export function renderMarkdown(markdown = "") {
+  const { body } = stripFrontmatter(markdown);
+  const raw = marked.parse(body, {
+    async: false,
+    breaks: false,
+    gfm: true,
+  });
+  return normalizeRenderedHtml(addHeadingIds(sanitizeHtml(raw)));
+}
+
+export { escapeHtml, slugify, sanitizeHtml };

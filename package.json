@@ -16,7 +16,7 @@
     "@astrojs/mdx": "latest",
     "@astrojs/sitemap": "latest",
     "astro": "latest",
+    "marked": "^18.0.4",
     "typescript": "latest"
-  },
-  "devDependencies": {}
+  }
 }
