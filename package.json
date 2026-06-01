@@ -9,7 +9,7 @@
     "preview": "astro preview --host 127.0.0.1",
     "test": "node --test tests/*.test.mjs",
     "verify": "npm run build && npm test",
-    "deploy:cloudflare": "npm run build && wrangler pages deploy dist --project-name md-share"
+    "deploy:cloudflare": "npm run build && npx wrangler pages deploy dist --project-name md-share"
   },
   "dependencies": {
     "@astrojs/check": "latest",
