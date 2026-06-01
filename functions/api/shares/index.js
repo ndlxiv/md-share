@@ -46,7 +46,7 @@ export async function onRequestPost({ request, env }) {
   const title = String(input.title || parsed.data.title || titleFromMarkdown(content)).trim().slice(0, 160);
   const description = String(input.description || parsed.data.description || "").trim().slice(0, 280);
   const filename = safeFilename(input.filename || parsed.data.filename || `${title}.md`);
-  const id = randomId();
+  let id = randomId();
   const now = new Date();
   const createdAt = now.toISOString();
 
@@ -61,13 +61,26 @@ export async function onRequestPost({ request, env }) {
     passwordHash = await sha256(input.password);
   }
 
-  await env.DB.prepare(
-    `INSERT INTO shares (id, title, description, content, filename, created_at, expires_at, password_hash)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-  ).bind(id, title, description, content, filename, createdAt, expiresAt, passwordHash).run();
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      await env.DB.prepare(
+        `INSERT INTO shares (id, title, description, content, filename, created_at, expires_at, password_hash)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(id, title, description, content, filename, createdAt, expiresAt, passwordHash).run();
 
-  const url = new URL(`/s/${id}`, request.url).toString();
-  return json({ share: { id, title, description, filename, created_at: createdAt }, url }, 201);
+      const url = new URL(`/s/${id}`, request.url).toString();
+      return json({ share: { id, title, description, filename, created_at: createdAt }, url }, 201);
+    } catch (error) {
+      const isCollision = /unique|constraint|shares\.id/i.test(String(error?.message || error));
+      if (attempt === 0 && isCollision) {
+        id = randomId();
+        continue;
+      }
+      return json({ error: "storage_failed" }, 500);
+    }
+  }
+
+  return json({ error: "storage_failed" }, 500);
 }
 
 export const onRequestGet = methodNotAllowed;

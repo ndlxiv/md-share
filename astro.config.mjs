@@ -3,7 +3,7 @@ import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
-  site: "https://md-share.pages.dev",
+  site: "https://md-share-6y3.pages.dev",
   integrations: [mdx(), sitemap()],
   markdown: {
     shikiConfig: {

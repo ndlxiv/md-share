@@ -6,3 +6,8 @@ pages_build_output_dir = "dist"
 binding = "DB"
 database_name = "md-share-db"
 database_id = "4e5bfbd4-847e-4f9c-b678-b180b8835617"
+
+# Cloudflare Pages rejects cron trigger blocks in wrangler.toml. The scheduled cleanup
+# handler is kept in functions/_scheduled.js and unit-tested, but lazy deletion
+# on access is the deploy-safe production cleanup path unless a separate Worker
+# or dashboard-managed cron trigger is attached.

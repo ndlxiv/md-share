@@ -22,3 +22,16 @@ export async function sha256(text) {
   const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buffer), (b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// Length-independent, branch-free string comparison for secrets (e.g. password
+// hashes). Folds any length mismatch into the accumulator so the result is
+// constant-time with respect to the compared values.
+export function timingSafeEqual(a = "", b = "") {
+  const left = String(a);
+  const right = String(b);
+  let diff = left.length ^ right.length;
+  for (let i = 0; i < left.length; i += 1) {
+    diff |= left.charCodeAt(i) ^ right.charCodeAt(i % right.length || 0);
+  }
+  return diff === 0;
+}

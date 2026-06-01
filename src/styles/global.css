@@ -222,24 +222,18 @@ input[type="file"] { padding: 10px; }
   .options-panel .button.wide { display: none; }
   .created-panel { grid-template-columns: 1fr; }
   .mobile-action-bar {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    z-index: 20;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 12px;
+    margin-top: 12px;
     padding: 10px 10px 10px 14px;
     border-radius: 999px;
     background: rgba(255,255,255,.92);
-    backdrop-filter: blur(16px);
-    box-shadow: rgba(0,0,0,.14) 0 0 0 1px, rgba(0,0,0,.18) 0 18px 50px -20px;
+    box-shadow: var(--od-shadow-border);
   }
   .mobile-action-bar span { color: var(--od-muted); font-size: .9rem; font-weight: 650; }
   .mobile-action-bar .button { min-height: 44px; }
-  body:has(textarea:focus) .mobile-action-bar { transform: translateY(140%); }
   .admin-grid, .row { grid-template-columns: 1fr; }
 }
 

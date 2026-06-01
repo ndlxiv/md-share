@@ -12,7 +12,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <p class="lead">Drop a Markdown file or write directly. Preview on the right, ship a clean public link in one click.</p>
         </div>
         <div class="od-hero-actions">
-          <span class="od-status">README.md · 1/10 files</span>
+          <span class="od-status">README.md</span>
           <button id="create-share" class="button primary od-create-top" type="button" disabled>Create Share</button>
         </div>
       </div>
@@ -21,14 +21,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <section class="od-workspace" aria-label="Markdown sharing workspace">
       <aside class="file-panel od-card" aria-label="Files">
         <div class="panel-title">
-          <span>Files</span>
-          <button class="icon-button" id="add-file" type="button" aria-label="Add file">+</button>
+          <span>File</span>
         </div>
         <button class="file-item active" type="button">
           <span>README.md</span>
           <small>Current document</small>
         </button>
-        <p class="meta">1/10 files</p>
         <label class="drop-zone">
           <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
           <span>Drop .md files here</span>
@@ -42,6 +40,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <span class="od-pill">Markdown</span>
         </div>
         <textarea id="markdown-input" placeholder="Enter your markdown here..." spellcheck="false"></textarea>
+        <div class="mobile-action-bar">
+          <span class="od-status">README.md</span>
+          <button id="create-share-mobile" class="button primary" type="button" disabled>Create Share</button>
+        </div>
       </section>
 
       <section class="preview-panel od-card" aria-label="Preview markdown">
