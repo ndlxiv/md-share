@@ -54,7 +54,7 @@ test("client script renders preview, sends password, and calls public share API"
   assert.match(js, /filename: selectedFilename/);
   assert.match(js, /updateFileLabel/);
   assert.match(js, /marked|renderMarkdown|preview/i);
-  assert.match(js, /Create Another Share/);
+  assert.match(js, /Create another/);
   assert.match(js, /✅/);
   assert.match(js, /#share-password/);
   assert.doesNotMatch(js, /burnAfterReading/);
@@ -95,9 +95,11 @@ test("public /s route server-renders shares with password and expiration handlin
   assert.match(source, /DELETE FROM shares WHERE id = \?/);
 });
 
-test("created share actions use icon-only controls with accessible labels", () => {
+test("created share screen exposes clear labeled actions", () => {
   const source = readFileSync(file("src", "pages", "index.astro"), "utf8");
-  assert.match(source, /id="copy-share-url"[^>]+aria-label="Copy share link"[^>]*>📋<\/button>/);
-  assert.match(source, /id="open-share-url"[^>]+aria-label="Open share"[^>]*>🔗<\/a>/);
+  assert.match(source, /id="copy-share-url"[^>]*>📋 Copy link<\/button>/);
+  assert.match(source, /id="open-share-url"[^>]*>🔗 Open<\/a>/);
+  assert.match(source, /id="create-another"[^>]*>[^<]*Create another<\/button>/);
+  assert.match(source, /id="share-url"[^>]*readonly/);
   assert.doesNotMatch(source, /Burn after reading/);
 });

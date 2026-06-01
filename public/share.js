@@ -12,7 +12,7 @@ const shareUrlInput = document.querySelector("#share-url");
 const openShareUrl = document.querySelector("#open-share-url");
 const copyShareUrl = document.querySelector("#copy-share-url");
 const createAnother = document.querySelector("#create-another");
-const createAnotherLabel = "Create Another Share";
+const createAnotherLabel = "＋ Create another";
 const fileInput = document.querySelector("#file-input");
 const dropZone = document.querySelector(".drop-zone");
 const addFile = document.querySelector("#add-file");
@@ -211,10 +211,23 @@ async function loadFile(file) {
 
 input?.addEventListener("input", updatePreview);
 createButtons.forEach((button) => button?.addEventListener("click", createShare));
+shareUrlInput?.addEventListener("focus", () => shareUrlInput.select());
+shareUrlInput?.addEventListener("click", () => shareUrlInput.select());
+let copyResetTimer;
 copyShareUrl?.addEventListener("click", async () => {
-  await navigator.clipboard.writeText(shareUrlInput.value);
-  copyShareUrl.textContent = "✅";
-  copyShareUrl.setAttribute("aria-label", "Copied share link");
+  try {
+    await navigator.clipboard.writeText(shareUrlInput.value);
+  } catch {
+    shareUrlInput.select();
+    try { document.execCommand("copy"); } catch { /* ignore */ }
+  }
+  copyShareUrl.textContent = "✅ Copied!";
+  copyShareUrl.classList.add("is-copied");
+  clearTimeout(copyResetTimer);
+  copyResetTimer = setTimeout(() => {
+    copyShareUrl.textContent = "📋 Copy link";
+    copyShareUrl.classList.remove("is-copied");
+  }, 1600);
 });
 createAnother?.addEventListener("click", () => {
   showCreatedScreen(false);

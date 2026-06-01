@@ -76,19 +76,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </section>
 
     <section id="created-panel" class="created-panel od-card" hidden aria-live="polite">
-      <div>
-        <p class="eyebrow">Published</p>
-        <h2>Share Created!</h2>
-        <p>Your markdown is ready to share.</p>
+      <div class="created-head">
+        <div class="created-badge" aria-hidden="true">✓</div>
+        <h2>Share created!</h2>
+        <p class="meta">Your markdown is live — copy the link and share it anywhere.</p>
       </div>
-      <label class="field-row">
-        <span>Share URL</span>
-        <input id="share-url" readonly />
-      </label>
-      <div class="actions">
-        <button id="copy-share-url" class="button" type="button" aria-label="Copy share link" title="Copy share link">📋</button>
-        <a id="open-share-url" class="button" target="_blank" rel="noreferrer" aria-label="Open share" title="Open share">🔗</a>
-        <button id="create-another" class="button" type="button">Create Another Share</button>
+      <div class="created-link">
+        <input id="share-url" readonly aria-label="Share link" />
+        <button id="copy-share-url" class="button primary" type="button">📋 Copy link</button>
+      </div>
+      <div class="created-actions">
+        <a id="open-share-url" class="button" target="_blank" rel="noreferrer">🔗 Open</a>
+        <button id="create-another" class="button" type="button">＋ Create another</button>
       </div>
     </section>
 
