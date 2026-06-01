@@ -1,13 +1,13 @@
 # MD Share
 
-Simple Markdown sharing app inspired by MDShare.
+Simple anonymous Markdown sharing app.
 
 ## What it does
 
 - Homepage is a one-page Markdown writer with live preview.
 - Anyone can paste Markdown or drop a `.md` file, then click `Create Share` to get a public link.
-- `/s/<slug>` renders a clean read-only share page with Preview/Raw, copy, and download actions.
-- `/admin/` still exists for owner-only upload/edit/delete with an admin token.
+- `/s/<id>` server-renders a clean read-only share page with Preview/Raw, copy, and download actions.
+- Each share supports **expiration** (1h / 1d / 7d / 30d / never) and an optional **password**.
 - Content is stored in Cloudflare D1, so new shares work immediately without redeploying.
 
 ## Free stack
@@ -21,21 +21,23 @@ Simple Markdown sharing app inspired by MDShare.
 ## URLs
 
 - Public site: `https://md-share-6y3.pages.dev`
-- Public share route: `https://md-share-6y3.pages.dev/s/<slug>`
-- Legacy/admin-managed route: `https://md-share-6y3.pages.dev/p/example/`
-- Admin UI: `https://md-share-6y3.pages.dev/admin/`
+- Public share route: `https://md-share-6y3.pages.dev/s/<id>`
 
-## Admin token
+## Data model
 
-The Admin UI stores the token only in browser `localStorage` after you paste it.
+Single table `shares` (see `migrations/0001_create_shares.sql`):
 
-On the local Windows machine, the generated token was saved outside the repo at:
+| column | meaning |
+|---|---|
+| `id` | random url-safe id, primary key |
+| `title` / `description` | derived from the markdown (heading / frontmatter) |
+| `content` | raw markdown |
+| `filename` | suggested download filename |
+| `created_at` | ISO timestamp |
+| `expires_at` | ISO timestamp or NULL (never) |
+| `password_hash` | SHA-256 hex or NULL |
 
-```text
-C:\Users\ndl\md-share-admin-token.txt
-```
-
-Do not commit this token to GitHub.
+Expired shares are deleted lazily on first access after expiry.
 
 ## Local development
 
@@ -44,38 +46,35 @@ npm install
 npm run dev
 ```
 
-## Verify production build
+To exercise the Functions + D1 locally:
 
 ```bash
-npm run verify
+npm run build
+npx wrangler d1 execute md-share-db --local --file=migrations/0001_create_shares.sql
+npx wrangler pages dev
 ```
 
-## Cloudflare setup
-
-Create/apply D1 database:
+## Verify
 
 ```bash
-npx wrangler d1 create md-share-db
-npx wrangler d1 migrations apply md-share-db --remote
+npm run verify   # build + tests
 ```
 
-Set the admin secret for `/admin/` writes:
+## Cloudflare setup / deploy
 
 ```bash
-npx wrangler pages secret put ADMIN_TOKEN --project-name md-share
-```
+# Create the shares table on the remote D1 (run once)
+npx wrangler d1 execute md-share-db --remote --file=migrations/0001_create_shares.sql
 
-Deploy app shell/functions:
-
-```bash
+# Build + deploy the shell and Functions
 npm run deploy:cloudflare
 ```
 
-After this, content changes through the homepage or `/admin/` do not require deploy.
+After this, new shares created through the homepage are served immediately without redeploying.
 
 ## Notes
 
 - Public shares are visible to anyone with the link.
-- The homepage public create endpoint is intentionally unauthenticated for simple sharing; keep abuse/rate-limiting in mind if this becomes public at scale.
+- The homepage create endpoint is intentionally unauthenticated; keep abuse/rate-limiting in mind at scale.
 - The Markdown renderer escapes raw HTML before rendering to reduce XSS risk.
-- Password protect, expiration, and burn-after-reading are present in the simple UI as MVP controls; backend enforcement can be hardened in a follow-up.
+- Password is hashed with unsalted SHA-256 — adequate for casual sharing, not strong secrecy. A password-protected share still exposes its title/description on the unlock page.

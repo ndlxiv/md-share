@@ -1,10 +1,20 @@
-import { json, methodNotAllowed, readJson } from "../../_lib/api.js";
+import { json, methodNotAllowed, readJson, sha256 } from "../../_lib/api.js";
 import { stripFrontmatter } from "../../_lib/markdown.js";
 
 const MAX_CONTENT_LENGTH = 100_000;
 const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
 
-function randomSlug(length = 16) {
+// expiration key -> milliseconds offset (null = never)
+const EXPIRATION_MS = {
+  "1h": 3_600_000,
+  "1d": 86_400_000,
+  "7d": 604_800_000,
+  "30d": 2_592_000_000,
+  never: null,
+};
+const DEFAULT_EXPIRATION = "30d";
+
+function randomId(length = 16) {
   const bytes = crypto.getRandomValues(new Uint8Array(length));
   return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
 }
@@ -36,16 +46,28 @@ export async function onRequestPost({ request, env }) {
   const title = String(input.title || parsed.data.title || titleFromMarkdown(content)).trim().slice(0, 160);
   const description = String(input.description || parsed.data.description || "").trim().slice(0, 280);
   const filename = safeFilename(input.filename || parsed.data.filename || `${title}.md`);
-  const slug = randomSlug();
-  const now = new Date().toISOString();
+  const id = randomId();
+  const now = new Date();
+  const createdAt = now.toISOString();
+
+  const expirationKey = Object.prototype.hasOwnProperty.call(EXPIRATION_MS, input.expiration)
+    ? input.expiration
+    : DEFAULT_EXPIRATION;
+  const offset = EXPIRATION_MS[expirationKey];
+  const expiresAt = offset === null ? null : new Date(now.getTime() + offset).toISOString();
+
+  let passwordHash = null;
+  if (input.passwordProtected && typeof input.password === "string" && input.password) {
+    passwordHash = await sha256(input.password);
+  }
 
   await env.DB.prepare(
-    `INSERT INTO documents (slug, title, description, content, filename, public, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 1, ?, ?)`
-  ).bind(slug, title, description, content, filename, now, now).run();
+    `INSERT INTO shares (id, title, description, content, filename, created_at, expires_at, password_hash)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  ).bind(id, title, description, content, filename, createdAt, expiresAt, passwordHash).run();
 
-  const url = new URL(`/s/${slug}`, request.url).toString();
-  return json({ share: { slug, title, description, filename, created_at: now }, url }, 201);
+  const url = new URL(`/s/${id}`, request.url).toString();
+  return json({ share: { id, title, description, filename, created_at: createdAt }, url }, 201);
 }
 
 export const onRequestGet = methodNotAllowed;

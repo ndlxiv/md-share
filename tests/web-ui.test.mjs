@@ -1,31 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
-const read = (...parts) => readFileSync(join(root, ...parts), "utf8");
-
-test("project has editable web UI routes and Cloudflare D1 functions", () => {
-  assert.ok(existsSync(join(root, "src", "pages", "admin.astro")), "admin UI page should exist");
-  assert.ok(existsSync(join(root, "functions", "api", "docs", "index.js")), "docs collection API should exist");
-  assert.ok(existsSync(join(root, "functions", "api", "docs", "[slug].js")), "single doc API should exist");
-  assert.ok(existsSync(join(root, "functions", "p", "[[slug]].js")), "dynamic public markdown page function should exist");
-  assert.ok(existsSync(join(root, "migrations", "0001_create_documents.sql")), "D1 migration should exist");
-
-  const wrangler = read("wrangler.toml");
-  assert.match(wrangler, /\[\[d1_databases\]\]/, "wrangler should bind a D1 database");
-  assert.match(wrangler, /binding\s*=\s*"DB"/, "D1 binding should be DB");
-
-  const admin = read("src", "pages", "admin.astro");
-  assert.match(admin, /type="file"/, "admin UI should support uploading markdown files");
-  assert.match(admin, /textarea/, "admin UI should support editing markdown content");
-  assert.match(admin, /localStorage/, "admin UI should remember the admin token locally");
-});
+const loadRenderer = () => import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
 
 test("markdown renderer escapes unsafe HTML and renders core markdown", async () => {
-  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const mod = await loadRenderer();
   const html = mod.renderMarkdown(`# Title\n\n<script>alert(1)</script>\n\n- one\n- two\n\n\`\`\`js\nconsole.log("x")\n\`\`\``);
   assert.match(html, /<h1 id="title">Title<\/h1>/);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
@@ -34,7 +16,7 @@ test("markdown renderer escapes unsafe HTML and renders core markdown", async ()
 });
 
 test("markdown renderer preserves tables, ordered lists, and richer inline formatting", async () => {
-  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const mod = await loadRenderer();
   const html = mod.renderMarkdown(`| Metric | Value | Note |\n|---|---:|:---:|\n| Revenue | £17.1M | **cleaned** data |\n| Customers | 5,852 | \`RFM\` base |\n\n1. First ordered item\n2. Second ordered item\n\n~~old~~ **bold** *italic* [Docs](https://example.com)`);
 
   assert.match(html, /<table>/);
@@ -47,7 +29,7 @@ test("markdown renderer preserves tables, ordered lists, and richer inline forma
 });
 
 test("markdown renderer turns section dividers into horizontal rules", async () => {
-  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const mod = await loadRenderer();
   const html = mod.renderMarkdown(`Intro\n\n---\n\nNext section\n\n***\n\nFinal section`);
 
   assert.match(html, /<p>Intro<\/p>\s*<hr>\s*<p>Next section<\/p>\s*<hr>\s*<p>Final section<\/p>/);
@@ -56,7 +38,7 @@ test("markdown renderer turns section dividers into horizontal rules", async () 
 });
 
 test("markdown renderer hides frontmatter from preview output", async () => {
-  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const mod = await loadRenderer();
   const html = mod.renderMarkdown(`---\r\ntitle: Hidden Metadata\r\ndescription: Should not render\r\n---\r\n# Visible Title`);
 
   assert.match(html, /<h1 id="visible-title">Visible Title<\/h1>/);
@@ -66,7 +48,7 @@ test("markdown renderer hides frontmatter from preview output", async () => {
 });
 
 test("markdown renderer covers common GitHub-style markdown", async () => {
-  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const mod = await loadRenderer();
   const html = mod.renderMarkdown(`#### H4\n\n__bold__ _italic_\n\n![Logo](https://example.com/logo.png)\n\n[Relative](/docs)\n\n+ plus item\n\n- parent\n  - child\n\n- [x] done\n- [ ] todo\n\n~~~js\nconsole.log(1)\n~~~\n\n<https://example.com>`);
 
   assert.match(html, /<h4[^>]*>H4<\/h4>/);
@@ -80,16 +62,4 @@ test("markdown renderer covers common GitHub-style markdown", async () => {
   assert.match(html, /<input[^>]+type="checkbox"/);
   assert.match(html, /<pre><code class="language-js">console\.log\(1\)\n<\/code><\/pre>/);
   assert.match(html, /<a href="https:\/\/example\.com"[^>]*>https:\/\/example\.com<\/a>/);
-});
-
-test("admin API functions require bearer auth for writes", () => {
-  const collectionApi = read("functions", "api", "docs", "index.js");
-  const itemApi = read("functions", "api", "docs", "[slug].js");
-  assert.match(collectionApi, /Authorization/i);
-  assert.match(collectionApi, /ADMIN_TOKEN/);
-  assert.match(itemApi, /Authorization/i);
-  assert.match(itemApi, /ADMIN_TOKEN/);
-  assert.match(collectionApi, /INSERT INTO documents/i);
-  assert.match(itemApi, /UPDATE documents/i);
-  assert.match(itemApi, /DELETE FROM documents/i);
 });

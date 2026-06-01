@@ -163,6 +163,12 @@ function updateFileLabel(filename = selectedFilename) {
 async function createShare() {
   const content = input.value.trim();
   if (!content) return;
+  const passwordProtected = passwordProtect.checked;
+  const password = passwordProtected ? document.querySelector("#share-password").value : "";
+  if (passwordProtected && !password) {
+    alert("Please enter a password or turn off password protection.");
+    return;
+  }
   createButtons.forEach((button) => (button.disabled = true));
   try {
     const response = await fetch("/api/shares", {
@@ -172,8 +178,8 @@ async function createShare() {
         content,
         filename: selectedFilename,
         expiration: document.querySelector("#expiration").value,
-        burnAfterReading: document.querySelector("#burn-after-reading").checked,
-        passwordProtected: passwordProtect.checked,
+        passwordProtected,
+        password,
       }),
     });
     const payload = await response.json();
