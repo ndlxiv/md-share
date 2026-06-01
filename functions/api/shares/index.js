@@ -2,7 +2,7 @@ import { json, methodNotAllowed, readJson } from "../../_lib/api.js";
 import { stripFrontmatter } from "../../_lib/markdown.js";
 
 const MAX_CONTENT_LENGTH = 100_000;
-const alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-";
+const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz";
 
 function randomSlug(length = 16) {
   const bytes = crypto.getRandomValues(new Uint8Array(length));

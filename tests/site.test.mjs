@@ -46,6 +46,7 @@ test("public share API accepts unauthenticated markdown with validation", () => 
   assert.match(source, /content_required/);
   assert.match(source, /content_too_large/);
   assert.match(source, /INSERT INTO documents/);
+  assert.match(source, /const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"/);
   assert.doesNotMatch(source, /requireAdmin/);
 });
 
