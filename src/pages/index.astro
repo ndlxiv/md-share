@@ -53,7 +53,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </section>
 
       <aside class="options-panel od-card" aria-label="Share options">
-        <button id="create-share-secondary" class="button primary wide" type="button" disabled>Create Share</button>
         <label class="switch-row">
           <span>Password protect</span>
           <input id="password-protect" type="checkbox" />
@@ -93,10 +92,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </div>
     </section>
 
-    <div class="mobile-action-bar" aria-label="Mobile create share actions">
-      <span>Ready to publish?</span>
-      <button id="create-share-mobile" class="button primary" type="button" disabled>Create Share</button>
-    </div>
   </main>
   <script is:inline type="module" src="/share.js"></script>
 </BaseLayout>

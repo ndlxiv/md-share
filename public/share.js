@@ -6,7 +6,7 @@ const createButtons = [
   document.querySelector("#create-share"),
   document.querySelector("#create-share-secondary"),
   document.querySelector("#create-share-mobile"),
-];
+].filter(Boolean);
 const createdPanel = document.querySelector("#created-panel");
 const shareUrlInput = document.querySelector("#share-url");
 const openShareUrl = document.querySelector("#open-share-url");
@@ -19,6 +19,13 @@ const addFile = document.querySelector("#add-file");
 const passwordProtect = document.querySelector("#password-protect");
 const passwordRow = document.querySelector("#password-row");
 let selectedFilename = "README.md";
+
+const editorSections = [".od-hero", ".od-workspace", ".mobile-action-bar"].map((sel) => document.querySelector(sel));
+function showCreatedScreen(show) {
+  editorSections.forEach((el) => { if (el) el.style.display = show ? "none" : ""; });
+  createdPanel.hidden = !show;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
 
 const escapeHtml = (value = "") =>
   String(value)
@@ -186,8 +193,7 @@ async function createShare() {
     if (!response.ok) throw new Error(payload.error || "create_failed");
     shareUrlInput.value = payload.url;
     openShareUrl.href = payload.url;
-    createdPanel.hidden = false;
-    createdPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+    showCreatedScreen(true);
   } catch (error) {
     alert(`Could not create share: ${error.message}`);
   } finally {
@@ -211,7 +217,7 @@ copyShareUrl?.addEventListener("click", async () => {
   copyShareUrl.setAttribute("aria-label", "Copied share link");
 });
 createAnother?.addEventListener("click", () => {
-  createdPanel.hidden = true;
+  showCreatedScreen(false);
   input.value = "";
   shareUrlInput.value = "";
   selectedFilename = "README.md";

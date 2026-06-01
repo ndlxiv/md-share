@@ -33,8 +33,9 @@ test("built homepage is a one-page markdown writer without burn-after-reading", 
   assert.match(html, /Drop \.md files here/);
   assert.match(html, /Password protect/);
   assert.match(html, /Expiration/);
-  assert.match(html, /mobile-action-bar/);
   assert.match(html, /\/share\.js/);
+  // exactly one Create Share button on the home screen
+  assert.equal((html.match(/>Create Share</g) || []).length, 1);
   assert.doesNotMatch(html, /Burn after reading/);
   assert.doesNotMatch(html, /href="\/admin\/"/);
 
