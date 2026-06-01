@@ -26,7 +26,7 @@ const page = ({ title, description = "", body, raw, slug, filename = "share.md" 
     <section class="card">
       <div class="toolbar">
         <div><p class="meta">${escapeHtml(filename)}</p><h1>${escapeHtml(title)}</h1>${description ? `<p>${escapeHtml(description)}</p>` : ""}</div>
-        <div class="actions"><button class="button" aria-label="Copy to clipboard" onclick="navigator.clipboard.writeText(location.href).then(()=>this.textContent='Copied')">Copy to clipboard</button><button class="button" aria-label="Download file" onclick="downloadRaw()">Download file</button></div>
+        <div class="actions"><button class="button" aria-label="Copy to clipboard" title="Copy to clipboard" onclick="navigator.clipboard.writeText(location.href).then(()=>this.textContent='✅')">📋</button><button class="button" aria-label="Download file" title="Download file" onclick="downloadRaw()">⬇️</button></div>
       </div>
       <div class="tabs"><button class="tab" id="preview-tab" type="button">Preview</button><button class="tab" id="raw-tab" type="button">Raw</button></div>
       <article id="preview" class="prose">${body}</article>

@@ -49,6 +49,7 @@ test("client script renders preview and calls public share API", () => {
   assert.match(js, /updateFileLabel/);
   assert.match(js, /marked|renderMarkdown|preview/i);
   assert.match(js, /Create Another Share/);
+  assert.match(js, /✅/);
 });
 
 test("public share API accepts unauthenticated markdown with validation", () => {
@@ -72,6 +73,19 @@ test("public /s route renders stored markdown shares", () => {
   assert.match(source, /downloadFilename/);
   assert.match(source, /scriptJson/);
   assert.doesNotMatch(source, /README\.md<\/p>/);
-  assert.match(source, /Copy to clipboard/);
+  assert.match(source, /aria-label="Copy to clipboard"/);
+  assert.match(source, /aria-label="Download file"/);
+  assert.match(source, />📋<\/button>/);
+  assert.match(source, />⬇️<\/button>/);
+  assert.doesNotMatch(source, />Copy to clipboard<\/button>/);
+  assert.doesNotMatch(source, />Download file<\/button>/);
   assert.match(source, /Raw/);
+});
+
+test("created share actions use icon-only controls with accessible labels", () => {
+  const source = readFileSync(file("src", "pages", "index.astro"), "utf8");
+  assert.match(source, /id="copy-share-url"[^>]+aria-label="Copy share link"[^>]*>📋<\/button>/);
+  assert.match(source, /id="open-share-url"[^>]+aria-label="Open share"[^>]*>🔗<\/a>/);
+  assert.doesNotMatch(source, />Copy link<\/button>/);
+  assert.doesNotMatch(source, />Open share<\/a>/);
 });

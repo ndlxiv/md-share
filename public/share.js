@@ -201,7 +201,8 @@ input?.addEventListener("input", updatePreview);
 createButtons.forEach((button) => button?.addEventListener("click", createShare));
 copyShareUrl?.addEventListener("click", async () => {
   await navigator.clipboard.writeText(shareUrlInput.value);
-  copyShareUrl.textContent = "Copied";
+  copyShareUrl.textContent = "✅";
+  copyShareUrl.setAttribute("aria-label", "Copied share link");
 });
 createAnother?.addEventListener("click", () => {
   createdPanel.hidden = true;
