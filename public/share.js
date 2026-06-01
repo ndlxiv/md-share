@@ -16,6 +16,7 @@ const addFile = document.querySelector("#add-file");
 const passwordProtect = document.querySelector("#password-protect");
 const passwordRow = document.querySelector("#password-row");
 const createAnotherLabel = "Create Another Share";
+let selectedFilename = "README.md";
 
 function escapeHtml(value) {
   return String(value).replace(/[&<>"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[char]));
@@ -88,6 +89,13 @@ function updatePreview() {
   createButtons.forEach((button) => (button.disabled = !value));
 }
 
+function updateFileLabel(filename = selectedFilename) {
+  const fileNameNode = document.querySelector(".file-item span");
+  const fileMetaNode = document.querySelector(".file-item small");
+  if (fileNameNode) fileNameNode.textContent = filename;
+  if (fileMetaNode) fileMetaNode.textContent = filename === "README.md" ? "Current document" : "Uploaded file";
+}
+
 async function createShare() {
   const content = input.value.trim();
   if (!content) return;
@@ -98,6 +106,7 @@ async function createShare() {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         content,
+        filename: selectedFilename,
         expiration: document.querySelector("#expiration").value,
         burnAfterReading: document.querySelector("#burn-after-reading").checked,
         passwordProtected: passwordProtect.checked,
@@ -118,7 +127,9 @@ async function createShare() {
 
 async function loadFile(file) {
   if (!file) return;
+  selectedFilename = file.name || "share.md";
   input.value = await file.text();
+  updateFileLabel(selectedFilename);
   updatePreview();
 }
 
@@ -132,6 +143,8 @@ createAnother?.addEventListener("click", () => {
   createdPanel.hidden = true;
   input.value = "";
   shareUrlInput.value = "";
+  selectedFilename = "README.md";
+  updateFileLabel(selectedFilename);
   updatePreview();
 });
 addFile?.addEventListener("click", () => fileInput.click());
@@ -145,4 +158,5 @@ passwordProtect?.addEventListener("change", () => {
   passwordRow.hidden = !passwordProtect.checked;
 });
 
+updateFileLabel();
 updatePreview();

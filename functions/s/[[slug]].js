@@ -1,7 +1,11 @@
 import { slugifyInput } from "../_lib/api.js";
 import { escapeHtml, renderMarkdown } from "../_lib/markdown.js";
 
-const page = ({ title, description = "", body, raw, slug }) => `<!doctype html>
+function scriptJson(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026");
+}
+
+const page = ({ title, description = "", body, raw, slug, filename = "share.md" }) => `<!doctype html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
@@ -21,7 +25,7 @@ const page = ({ title, description = "", body, raw, slug }) => `<!doctype html>
     <div class="topbar"><a class="brand" href="/">MDShare</a><span class="meta">/s/${escapeHtml(slug)}</span></div>
     <section class="card">
       <div class="toolbar">
-        <div><p class="meta">README.md</p><h1>${escapeHtml(title)}</h1>${description ? `<p>${escapeHtml(description)}</p>` : ""}</div>
+        <div><p class="meta">${escapeHtml(filename)}</p><h1>${escapeHtml(title)}</h1>${description ? `<p>${escapeHtml(description)}</p>` : ""}</div>
         <div class="actions"><button class="button" aria-label="Copy to clipboard" onclick="navigator.clipboard.writeText(location.href).then(()=>this.textContent='Copied')">Copy to clipboard</button><button class="button" aria-label="Download file" onclick="downloadRaw()">Download file</button></div>
       </div>
       <div class="tabs"><button class="tab" id="preview-tab" type="button">Preview</button><button class="tab" id="raw-tab" type="button">Raw</button></div>
@@ -30,12 +34,13 @@ const page = ({ title, description = "", body, raw, slug }) => `<!doctype html>
     </section>
   </main>
   <script>
-    const rawContent = ${JSON.stringify(raw)};
+    const rawContent = ${scriptJson(raw)};
+    const downloadFilename = ${scriptJson(filename)};
     const preview = document.querySelector('#preview');
     const raw = document.querySelector('#raw');
     document.querySelector('#preview-tab').onclick = () => { preview.classList.remove('hidden'); raw.classList.add('hidden'); };
     document.querySelector('#raw-tab').onclick = () => { raw.classList.remove('hidden'); preview.classList.add('hidden'); };
-    function downloadRaw(){ const blob = new Blob([rawContent], {type:'text/markdown'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'README.md'; a.click(); URL.revokeObjectURL(a.href); }
+    function downloadRaw(){ const blob = new Blob([rawContent], {type:'text/markdown'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = downloadFilename; a.click(); URL.revokeObjectURL(a.href); }
   </script>
 </body>
 </html>`;
@@ -46,7 +51,7 @@ export async function onRequestGet({ env, params }) {
   if (!slug) return Response.redirect(new URL("/", "https://md-share-6y3.pages.dev"), 302);
 
   const doc = await env.DB.prepare(
-    "SELECT slug, title, description, content FROM documents WHERE slug = ? AND public = 1"
+    "SELECT slug, title, description, content, COALESCE(filename, 'share.md') AS filename FROM documents WHERE slug = ? AND public = 1"
   ).bind(slug).first();
 
   if (!doc) {

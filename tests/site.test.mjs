@@ -45,6 +45,8 @@ test("client script renders preview and calls public share API", () => {
   assert.equal(existsSync(jsPath), true, "share client script should be built");
   const js = readFileSync(jsPath, "utf8");
   assert.match(js, /\/api\/shares/);
+  assert.match(js, /filename: selectedFilename/);
+  assert.match(js, /updateFileLabel/);
   assert.match(js, /marked|renderMarkdown|preview/i);
   assert.match(js, /Create Another Share/);
 });
@@ -56,6 +58,8 @@ test("public share API accepts unauthenticated markdown with validation", () => 
   assert.match(source, /content_required/);
   assert.match(source, /content_too_large/);
   assert.match(source, /INSERT INTO documents/);
+  assert.match(source, /filename/);
+  assert.match(source, /safeFilename/);
   assert.match(source, /const alphabet = "0123456789abcdefghijklmnopqrstuvwxyz"/);
   assert.doesNotMatch(source, /requireAdmin/);
 });
@@ -64,7 +68,10 @@ test("public /s route renders stored markdown shares", () => {
   const routePath = file("functions/s/[[slug]].js");
   const source = readFileSync(routePath, "utf8");
   assert.match(source, /renderMarkdown/);
-  assert.match(source, /SELECT slug, title, description, content/);
+  assert.match(source, /SELECT slug, title, description, content, COALESCE\(filename/);
+  assert.match(source, /downloadFilename/);
+  assert.match(source, /scriptJson/);
+  assert.doesNotMatch(source, /README\.md<\/p>/);
   assert.match(source, /Copy to clipboard/);
   assert.match(source, /Raw/);
 });
