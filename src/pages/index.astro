@@ -2,40 +2,57 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 <BaseLayout title="MDShare" description="Paste Markdown and create a public share link instantly.">
-  <main class="simple-shell" data-page="create-share">
-    <section class="simple-hero" aria-label="Create markdown share">
-      <div>
-        <p class="eyebrow">Create New Share</p>
-        <h1>MDShare</h1>
+  <main class="od-shell" data-page="create-share">
+    <section class="od-hero" aria-label="Create markdown share">
+      <div class="od-kicker">Open Design inspired · local-first markdown sharing</div>
+      <div class="od-hero-grid">
+        <div class="od-copy">
+          <p class="eyebrow">Create New Share</p>
+          <h1>MDShare</h1>
+          <p class="lead">Drop a Markdown file or write directly. Preview on the right, ship a clean public link in one click.</p>
+        </div>
+        <div class="od-hero-actions">
+          <span class="od-status">README.md · 1/10 files</span>
+          <button id="create-share" class="button primary od-create-top" type="button" disabled>Create Share</button>
+        </div>
       </div>
-      <button id="create-share" class="button primary" type="button" disabled>Create Share</button>
     </section>
 
-    <section class="share-workspace">
-      <aside class="file-panel" aria-label="Files">
+    <section class="od-workspace" aria-label="Markdown sharing workspace">
+      <aside class="file-panel od-card" aria-label="Files">
         <div class="panel-title">
           <span>Files</span>
           <button class="icon-button" id="add-file" type="button" aria-label="Add file">+</button>
         </div>
-        <button class="file-item active" type="button">README.md</button>
+        <button class="file-item active" type="button">
+          <span>README.md</span>
+          <small>Current document</small>
+        </button>
         <p class="meta">1/10 files</p>
         <label class="drop-zone">
           <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
           <span>Drop .md files here</span>
+          <small>or tap to choose file</small>
         </label>
       </aside>
 
-      <section class="editor-panel" aria-label="Write markdown">
-        <div class="panel-title">Write</div>
+      <section class="editor-panel od-card" aria-label="Write markdown">
+        <div class="panel-title">
+          <span>Write</span>
+          <span class="od-pill">Markdown</span>
+        </div>
         <textarea id="markdown-input" placeholder="Enter your markdown here..." spellcheck="false"></textarea>
       </section>
 
-      <section class="preview-panel" aria-label="Preview markdown">
-        <div class="panel-title">Preview</div>
+      <section class="preview-panel od-card" aria-label="Preview markdown">
+        <div class="panel-title">
+          <span>Preview</span>
+          <span class="od-pill muted">Live</span>
+        </div>
         <article id="markdown-preview" class="prose muted-preview">Nothing to preview</article>
       </section>
 
-      <aside class="options-panel" aria-label="Share options">
+      <aside class="options-panel od-card" aria-label="Share options">
         <button id="create-share-secondary" class="button primary wide" type="button" disabled>Create Share</button>
         <label class="switch-row">
           <span>Password protect</span>
@@ -63,9 +80,12 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       </aside>
     </section>
 
-    <section id="created-panel" class="created-panel" hidden aria-live="polite">
-      <h2>Share Created!</h2>
-      <p>Your markdown is ready to share.</p>
+    <section id="created-panel" class="created-panel od-card" hidden aria-live="polite">
+      <div>
+        <p class="eyebrow">Published</p>
+        <h2>Share Created!</h2>
+        <p>Your markdown is ready to share.</p>
+      </div>
       <label class="field-row">
         <span>Share URL</span>
         <input id="share-url" readonly />
@@ -76,6 +96,11 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <button id="create-another" class="button" type="button">Create Another Share</button>
       </div>
     </section>
+
+    <div class="mobile-action-bar" aria-label="Mobile create share actions">
+      <span>Ready to publish?</span>
+      <button id="create-share-mobile" class="button primary" type="button" disabled>Create Share</button>
+    </div>
   </main>
   <script is:inline src="/share.js" defer></script>
 </BaseLayout>

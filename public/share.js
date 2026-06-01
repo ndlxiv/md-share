@@ -1,6 +1,10 @@
 const input = document.querySelector("#markdown-input");
 const preview = document.querySelector("#markdown-preview");
-const createButtons = [document.querySelector("#create-share"), document.querySelector("#create-share-secondary")];
+const createButtons = [
+  document.querySelector("#create-share"),
+  document.querySelector("#create-share-secondary"),
+  document.querySelector("#create-share-mobile"),
+];
 const createdPanel = document.querySelector("#created-panel");
 const shareUrlInput = document.querySelector("#share-url");
 const openShareUrl = document.querySelector("#open-share-url");

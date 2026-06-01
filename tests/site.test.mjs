@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,14 +20,24 @@ test("built homepage is a one-page markdown writer like the reference", () => {
   assert.equal(existsSync(htmlPath), true, "run npm run build first");
   const html = readFileSync(htmlPath, "utf8");
   assert.match(html, /MDShare/);
+  assert.match(html, /Open Design inspired/);
   assert.match(html, /Create Share/);
   assert.match(html, /Enter your markdown here/);
   assert.match(html, /Drop \.md files here/);
   assert.match(html, /Password protect/);
   assert.match(html, /Expiration/);
   assert.match(html, /Burn after reading/);
+  assert.match(html, /mobile-action-bar/);
   assert.match(html, /\/share\.js/);
   assert.doesNotMatch(html, /Open Admin/);
+
+  const cssFile = readdirSync(file("dist", "_astro")).find((name) => name.endsWith(".css"));
+  assert.ok(cssFile, "built CSS asset should exist");
+  const css = readFileSync(file("dist", "_astro", cssFile), "utf8");
+  assert.match(css, /--od-bg:\s*#fafafa/);
+  assert.match(css, /--od-ink:\s*#111111/);
+  assert.match(css, /@media\(max-width:900px\)/);
+  assert.match(css, /@media\(max-width:640px\)/);
 });
 
 test("client script renders preview and calls public share API", () => {
