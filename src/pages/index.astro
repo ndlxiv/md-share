@@ -1,39 +1,81 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-
-const modules = import.meta.glob("../content/shares/*.{md,mdx}", { eager: true });
-const fallbackShares = Object.entries(modules)
-  .map(([path, mod]: [string, any]) => {
-    const slug = path.split("/").pop()?.replace(/\.(md|mdx)$/i, "") ?? "";
-    return { slug, frontmatter: mod.frontmatter ?? {} };
-  })
-  .filter((share) => share.frontmatter.public !== false)
-  .sort((a, b) => String(b.frontmatter.createdAt ?? "").localeCompare(String(a.frontmatter.createdAt ?? "")));
 ---
-<BaseLayout title="MD Share" description="Upload, edit, and share Markdown as public pages.">
-  <main class="container">
-    <section class="hero">
-      <div class="eyebrow">Editable Markdown sharing</div>
-      <h1>Upload `.md` files and edit them from the web.</h1>
-      <p class="lead">
-        Markdown is stored in Cloudflare D1 and served through Pages Functions, so saving in the Admin UI updates public links immediately — no manual deploy.
-      </p>
+<BaseLayout title="MDShare" description="Paste Markdown and create a public share link instantly.">
+  <main class="simple-shell" data-page="create-share">
+    <section class="simple-hero" aria-label="Create markdown share">
+      <div>
+        <p class="eyebrow">Create New Share</p>
+        <h1>MDShare</h1>
+      </div>
+      <button id="create-share" class="button primary" type="button" disabled>Create Share</button>
+    </section>
+
+    <section class="share-workspace">
+      <aside class="file-panel" aria-label="Files">
+        <div class="panel-title">
+          <span>Files</span>
+          <button class="icon-button" id="add-file" type="button" aria-label="Add file">+</button>
+        </div>
+        <button class="file-item active" type="button">README.md</button>
+        <p class="meta">1/10 files</p>
+        <label class="drop-zone">
+          <input id="file-input" type="file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
+          <span>Drop .md files here</span>
+        </label>
+      </aside>
+
+      <section class="editor-panel" aria-label="Write markdown">
+        <div class="panel-title">Write</div>
+        <textarea id="markdown-input" placeholder="Enter your markdown here..." spellcheck="false"></textarea>
+      </section>
+
+      <section class="preview-panel" aria-label="Preview markdown">
+        <div class="panel-title">Preview</div>
+        <article id="markdown-preview" class="prose muted-preview">Nothing to preview</article>
+      </section>
+
+      <aside class="options-panel" aria-label="Share options">
+        <button id="create-share-secondary" class="button primary wide" type="button" disabled>Create Share</button>
+        <label class="switch-row">
+          <span>Password protect</span>
+          <input id="password-protect" type="checkbox" />
+        </label>
+        <div id="password-row" class="field-row" hidden>
+          <label for="share-password">Password</label>
+          <input id="share-password" type="password" placeholder="Optional password" />
+        </div>
+        <label class="field-row" for="expiration">
+          <span>Expiration</span>
+          <select id="expiration">
+            <option value="1h">1 hour</option>
+            <option value="1d">1 day</option>
+            <option value="7d">7 days</option>
+            <option value="30d" selected>30 days</option>
+            <option value="never">Never</option>
+          </select>
+        </label>
+        <p class="meta">Share will be automatically deleted after the selected time.</p>
+        <label class="switch-row">
+          <span>Burn after reading</span>
+          <input id="burn-after-reading" type="checkbox" />
+        </label>
+      </aside>
+    </section>
+
+    <section id="created-panel" class="created-panel" hidden aria-live="polite">
+      <h2>Share Created!</h2>
+      <p>Your markdown is ready to share.</p>
+      <label class="field-row">
+        <span>Share URL</span>
+        <input id="share-url" readonly />
+      </label>
       <div class="actions">
-        <a class="button primary" href="/admin/">Open Admin</a>
+        <button id="copy-share-url" class="button" type="button">Copy link</button>
+        <a id="open-share-url" class="button" target="_blank" rel="noreferrer">Open share</a>
+        <button id="create-another" class="button" type="button">Create Another Share</button>
       </div>
     </section>
-
-    <section id="dynamic-shares" class="share-grid" aria-label="Published markdown shares">
-      {fallbackShares.map(({ slug, frontmatter }) => (
-        <a class="card" href={`/p/${slug}/`}>
-          <h2>{frontmatter.title ?? slug}</h2>
-          {frontmatter.description && <p>{frontmatter.description}</p>}
-          <span class="meta">Open /p/{slug}</span>
-        </a>
-      ))}
-    </section>
-    <p id="empty" class="empty" hidden>No public Markdown files yet. Open Admin to upload one.</p>
   </main>
-
-  <script is:inline src="/index.js" defer></script>
+  <script is:inline src="/share.js" defer></script>
 </BaseLayout>

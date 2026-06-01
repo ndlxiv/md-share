@@ -1,13 +1,14 @@
 # MD Share
 
-Editable Markdown sharing app.
+Simple Markdown sharing app inspired by MDShare.
 
 ## What it does
 
-- Public homepage lists Markdown documents from Cloudflare D1.
-- `/admin/` lets the owner upload `.md` files, edit Markdown, save, and delete documents.
-- `/p/<slug>/` renders each public Markdown document.
-- Saving in the web UI updates the public link immediately. No manual deploy is needed for content changes.
+- Homepage is a one-page Markdown writer with live preview.
+- Anyone can paste Markdown or drop a `.md` file, then click `Create Share` to get a public link.
+- `/s/<slug>` renders a clean read-only share page with Preview/Raw, copy, and download actions.
+- `/admin/` still exists for owner-only upload/edit/delete with an admin token.
+- Content is stored in Cloudflare D1, so new shares work immediately without redeploying.
 
 ## Free stack
 
@@ -20,8 +21,9 @@ Editable Markdown sharing app.
 ## URLs
 
 - Public site: `https://md-share-6y3.pages.dev`
+- Public share route: `https://md-share-6y3.pages.dev/s/<slug>`
+- Legacy/admin-managed route: `https://md-share-6y3.pages.dev/p/example/`
 - Admin UI: `https://md-share-6y3.pages.dev/admin/`
-- Example page: `https://md-share-6y3.pages.dev/p/example/`
 
 ## Admin token
 
@@ -57,7 +59,7 @@ npx wrangler d1 create md-share-db
 npx wrangler d1 migrations apply md-share-db --remote
 ```
 
-Set the admin secret:
+Set the admin secret for `/admin/` writes:
 
 ```bash
 npx wrangler pages secret put ADMIN_TOKEN --project-name md-share
@@ -69,10 +71,11 @@ Deploy app shell/functions:
 npm run deploy:cloudflare
 ```
 
-After this, content changes happen through `/admin/` and do not require deploy.
+After this, content changes through the homepage or `/admin/` do not require deploy.
 
 ## Notes
 
-- Public documents are visible to anyone with the link and on the homepage.
-- Hidden documents can be saved with `public: false`, but this is not a full private access-control system.
+- Public shares are visible to anyone with the link.
+- The homepage public create endpoint is intentionally unauthenticated for simple sharing; keep abuse/rate-limiting in mind if this becomes public at scale.
 - The Markdown renderer escapes raw HTML before rendering to reduce XSS risk.
+- Password protect, expiration, and burn-after-reading are present in the simple UI as MVP controls; backend enforcement can be hardened in a follow-up.
