@@ -20,10 +20,33 @@ const inlineMarkdown = (value = "") => {
   let html = escapeHtml(value);
   html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/~~([^~]+)~~/g, "<del>$1</del>");
   html = html.replace(/\*([^*]+)\*/g, "<em>$1</em>");
   html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
   return html;
 };
+
+const isTableDelimiter = (line = "") =>
+  /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+
+const isTableRow = (line = "") => line.includes("|") && !/^\s*```/.test(line);
+
+function splitTableRow(line = "") {
+  const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
+  return trimmed.split("|").map((cell) => cell.trim());
+}
+
+function tableAlignments(delimiter = "") {
+  return splitTableRow(delimiter).map((cell) => {
+    const left = cell.startsWith(":");
+    const right = cell.endsWith(":");
+    if (left && right) return "center";
+    if (right) return "right";
+    return "left";
+  });
+}
+
+const alignClass = (align) => (align === "right" || align === "center" ? ` class="align-${align}"` : "");
 
 export function renderMarkdown(markdown = "") {
   const normalized = String(markdown).replace(/\r\n/g, "\n");
@@ -31,6 +54,7 @@ export function renderMarkdown(markdown = "") {
   const html = [];
   let paragraph = [];
   let list = [];
+  let listType = "ul";
   let inCode = false;
   let codeLang = "";
   let codeLines = [];
@@ -43,8 +67,9 @@ export function renderMarkdown(markdown = "") {
   };
   const flushList = () => {
     if (list.length) {
-      html.push(`<ul>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</ul>`);
+      html.push(`<${listType}>${list.map((item) => `<li>${inlineMarkdown(item)}</li>`).join("")}</${listType}>`);
       list = [];
+      listType = "ul";
     }
   };
   const flushBlocks = () => {
@@ -52,7 +77,25 @@ export function renderMarkdown(markdown = "") {
     flushList();
   };
 
-  for (const line of lines) {
+  const renderTableAt = (index) => {
+    if (!isTableRow(lines[index]) || !isTableDelimiter(lines[index + 1] || "")) return null;
+    const headers = splitTableRow(lines[index]);
+    const aligns = tableAlignments(lines[index + 1]);
+    const rows = [];
+    let cursor = index + 2;
+    while (cursor < lines.length && isTableRow(lines[cursor]) && lines[cursor].trim()) {
+      rows.push(splitTableRow(lines[cursor]));
+      cursor += 1;
+    }
+    const thead = `<thead><tr>${headers.map((cell, i) => `<th${alignClass(aligns[i])}>${inlineMarkdown(cell)}</th>`).join("")}</tr></thead>`;
+    const tbody = `<tbody>${rows
+      .map((row) => `<tr>${headers.map((_, i) => `<td${alignClass(aligns[i])}>${inlineMarkdown(row[i] || "")}</td>`).join("")}</tr>`)
+      .join("")}</tbody>`;
+    return { html: `<table>${thead}${tbody}</table>`, nextIndex: cursor };
+  };
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
     const codeFence = line.match(/^```\s*([\w-]+)?\s*$/);
     if (codeFence) {
       if (inCode) {
@@ -77,6 +120,14 @@ export function renderMarkdown(markdown = "") {
       continue;
     }
 
+    const table = renderTableAt(index);
+    if (table) {
+      flushBlocks();
+      html.push(table.html);
+      index = table.nextIndex - 1;
+      continue;
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
     if (heading) {
       flushBlocks();
@@ -86,10 +137,14 @@ export function renderMarkdown(markdown = "") {
       continue;
     }
 
-    const item = line.match(/^[-*]\s+(.+)$/);
-    if (item) {
+    const unorderedItem = line.match(/^[-*]\s+(.+)$/);
+    const orderedItem = line.match(/^\d+[.)]\s+(.+)$/);
+    if (unorderedItem || orderedItem) {
       flushParagraph();
-      list.push(item[1].trim());
+      const nextType = orderedItem ? "ol" : "ul";
+      if (list.length && listType !== nextType) flushList();
+      listType = nextType;
+      list.push((unorderedItem || orderedItem)[1].trim());
       continue;
     }
 

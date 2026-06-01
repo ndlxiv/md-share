@@ -33,6 +33,19 @@ test("markdown renderer escapes unsafe HTML and renders core markdown", async ()
   assert.match(html, /<pre><code class="language-js">console\.log\(&quot;x&quot;\)/);
 });
 
+test("markdown renderer preserves tables, ordered lists, and richer inline formatting", async () => {
+  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const html = mod.renderMarkdown(`| Metric | Value | Note |\n|---|---:|:---:|\n| Revenue | £17.1M | **cleaned** data |\n| Customers | 5,852 | \`RFM\` base |\n\n1. First ordered item\n2. Second ordered item\n\n~~old~~ **bold** *italic* [Docs](https://example.com)`);
+
+  assert.match(html, /<table>/);
+  assert.match(html, /<thead><tr><th>Metric<\/th><th class="align-right">Value<\/th><th class="align-center">Note<\/th><\/tr><\/thead>/);
+  assert.match(html, /<tbody>[\s\S]*<td>Revenue<\/td><td class="align-right">£17\.1M<\/td><td class="align-center"><strong>cleaned<\/strong> data<\/td>[\s\S]*<\/tbody>/);
+  assert.match(html, /<ol>[\s\S]*<li>First ordered item<\/li>[\s\S]*<li>Second ordered item<\/li>[\s\S]*<\/ol>/);
+  assert.match(html, /<del>old<\/del> <strong>bold<\/strong> <em>italic<\/em>/);
+  assert.match(html, /<a href="https:\/\/example\.com" target="_blank" rel="noreferrer">Docs<\/a>/);
+  assert.doesNotMatch(html, /\| Metric \|/);
+});
+
 test("admin API functions require bearer auth for writes", () => {
   const collectionApi = read("functions", "api", "docs", "index.js");
   const itemApi = read("functions", "api", "docs", "[slug].js");
