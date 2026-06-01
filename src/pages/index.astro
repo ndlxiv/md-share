@@ -2,7 +2,7 @@
 import BaseLayout from "../layouts/BaseLayout.astro";
 
 const modules = import.meta.glob("../content/shares/*.{md,mdx}", { eager: true });
-const shares = Object.entries(modules)
+const fallbackShares = Object.entries(modules)
   .map(([path, mod]: [string, any]) => {
     const slug = path.split("/").pop()?.replace(/\.(md|mdx)$/i, "") ?? "";
     return { slug, frontmatter: mod.frontmatter ?? {} };
@@ -10,28 +10,30 @@ const shares = Object.entries(modules)
   .filter((share) => share.frontmatter.public !== false)
   .sort((a, b) => String(b.frontmatter.createdAt ?? "").localeCompare(String(a.frontmatter.createdAt ?? "")));
 ---
-<BaseLayout title="MD Share" description="Share Markdown files as clean public pages.">
+<BaseLayout title="MD Share" description="Upload, edit, and share Markdown as public pages.">
   <main class="container">
     <section class="hero">
-      <div class="eyebrow">Free Markdown sharing</div>
-      <h1>Share `.md` files as beautiful public pages.</h1>
+      <div class="eyebrow">Editable Markdown sharing</div>
+      <h1>Upload `.md` files and edit them from the web.</h1>
       <p class="lead">
-        Drop Markdown files into <code>src/content/shares</code>, push to GitHub, and Cloudflare Pages publishes clean URLs for readers.
+        Markdown is stored in Cloudflare D1 and served through Pages Functions, so saving in the Admin UI updates public links immediately — no manual deploy.
       </p>
+      <div class="actions">
+        <a class="button primary" href="/admin/">Open Admin</a>
+      </div>
     </section>
 
-    {shares.length > 0 ? (
-      <section class="share-grid" aria-label="Published markdown shares">
-        {shares.map(({ slug, frontmatter }) => (
-          <a class="card" href={`/p/${slug}/`}>
-            <h2>{frontmatter.title ?? slug}</h2>
-            {frontmatter.description && <p>{frontmatter.description}</p>}
-            <span class="meta">Open /p/{slug}</span>
-          </a>
-        ))}
-      </section>
-    ) : (
-      <p class="empty">No public Markdown files yet. Add one under <code>src/content/shares</code>.</p>
-    )}
+    <section id="dynamic-shares" class="share-grid" aria-label="Published markdown shares">
+      {fallbackShares.map(({ slug, frontmatter }) => (
+        <a class="card" href={`/p/${slug}/`}>
+          <h2>{frontmatter.title ?? slug}</h2>
+          {frontmatter.description && <p>{frontmatter.description}</p>}
+          <span class="meta">Open /p/{slug}</span>
+        </a>
+      ))}
+    </section>
+    <p id="empty" class="empty" hidden>No public Markdown files yet. Open Admin to upload one.</p>
   </main>
+
+  <script is:inline src="/index.js" defer></script>
 </BaseLayout>

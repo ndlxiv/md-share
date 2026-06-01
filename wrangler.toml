@@ -1,3 +1,8 @@
 name = "md-share"
 compatibility_date = "2026-06-01"
 pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "md-share-db"
+database_id = "4e5bfbd4-847e-4f9c-b678-b180b8835617"

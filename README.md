@@ -1,42 +1,39 @@
 # MD Share
 
-Production-ready static web app for sharing Markdown files as clean public pages.
+Editable Markdown sharing app.
+
+## What it does
+
+- Public homepage lists Markdown documents from Cloudflare D1.
+- `/admin/` lets the owner upload `.md` files, edit Markdown, save, and delete documents.
+- `/p/<slug>/` renders each public Markdown document.
+- Saving in the web UI updates the public link immediately. No manual deploy is needed for content changes.
 
 ## Free stack
 
-- Astro static site
-- GitHub repository
-- Cloudflare Pages free hosting
-- No database, no always-on server
+- Astro static shell
+- Cloudflare Pages hosting
+- Cloudflare Pages Functions API
+- Cloudflare D1 free database
+- GitHub repository for source code
 
-## Add a new Markdown share
+## URLs
 
-Create a file under:
+- Public site: `https://md-share-6y3.pages.dev`
+- Admin UI: `https://md-share-6y3.pages.dev/admin/`
+- Example page: `https://md-share-6y3.pages.dev/p/example/`
 
-```text
-src/content/shares/my-note.md
-```
+## Admin token
 
-Use frontmatter:
+The Admin UI stores the token only in browser `localStorage` after you paste it.
 
-```md
----
-title: "My Note"
-description: "Short description"
-createdAt: 2026-06-01
-public: true
----
-
-# My Note
-
-Markdown content here.
-```
-
-After deploy, the page is available at:
+On the local Windows machine, the generated token was saved outside the repo at:
 
 ```text
-/p/my-note
+C:\Users\ndl\md-share-admin-token.txt
 ```
+
+Do not commit this token to GitHub.
 
 ## Local development
 
@@ -51,36 +48,31 @@ npm run dev
 npm run verify
 ```
 
-## Deploy to Cloudflare Pages
+## Cloudflare setup
 
-### Option 1: Cloudflare dashboard
-
-1. Push this repo to GitHub.
-2. Open Cloudflare Dashboard → Workers & Pages → Create application → Pages.
-3. Connect the GitHub repo.
-4. Build settings:
-   - Framework preset: Astro
-   - Build command: `npm run build`
-   - Build output directory: `dist`
-   - Node version: `20` or newer
-
-### Option 2: Wrangler CLI
-
-Login once:
+Create/apply D1 database:
 
 ```bash
-npx wrangler login
+npx wrangler d1 create md-share-db
+npx wrangler d1 migrations apply md-share-db --remote
 ```
 
-Deploy:
+Set the admin secret:
 
 ```bash
-npm run build
-npx wrangler pages deploy dist --project-name md-share
+npx wrangler pages secret put ADMIN_TOKEN --project-name md-share
 ```
+
+Deploy app shell/functions:
+
+```bash
+npm run deploy:cloudflare
+```
+
+After this, content changes happen through `/admin/` and do not require deploy.
 
 ## Notes
 
-- Files with `public: false` are excluded from generated pages and homepage listing.
-- If the GitHub repository is public, never commit private Markdown content.
-- For private/unlisted shares, use hard-to-guess filenames and keep the repo private.
+- Public documents are visible to anyone with the link and on the homepage.
+- Hidden documents can be saved with `public: false`, but this is not a full private access-control system.
+- The Markdown renderer escapes raw HTML before rendering to reduce XSS risk.

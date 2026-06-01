@@ -28,7 +28,10 @@ const pageTitle = title === "MD Share" ? title : `${title} · MD Share`;
     <header class="site-header">
       <nav class="container nav" aria-label="Main navigation">
         <a class="brand" href="/">MD<span>Share</span></a>
-        <a class="nav-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub-ready</a>
+        <div class="nav-actions">
+          <a class="nav-link" href="/admin/">Admin</a>
+          <a class="nav-link" href="https://github.com/ndlxiv/md-share" target="_blank" rel="noreferrer">GitHub</a>
+        </div>
       </nav>
     </header>
     <slot />

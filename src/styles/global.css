@@ -7,6 +7,7 @@
   --muted: #aab6d3;
   --accent: #78dbff;
   --accent-2: #b7f36b;
+  --danger: #ff8c8c;
   --border: rgba(255, 255, 255, 0.14);
   --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
@@ -28,11 +29,13 @@ a { color: inherit; }
 .container { width: min(960px, calc(100% - 32px)); margin: 0 auto; }
 .site-header { padding: 28px 0 12px; }
 .nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.nav-actions { display: flex; gap: 14px; align-items: center; }
 .brand { text-decoration: none; font-weight: 800; letter-spacing: -0.04em; font-size: 1.2rem; }
 .brand span { color: var(--accent); }
 .nav-link { color: var(--muted); text-decoration: none; font-size: 0.95rem; }
 .nav-link:hover { color: var(--text); }
 .hero { padding: 72px 0 40px; }
+.hero.compact { padding-bottom: 24px; }
 .eyebrow { color: var(--accent-2); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 0.76rem; }
 h1 { margin: 12px 0 16px; font-size: clamp(2.5rem, 9vw, 5.4rem); line-height: 0.9; letter-spacing: -0.08em; }
 .lead { max-width: 680px; color: var(--muted); font-size: clamp(1.05rem, 2vw, 1.25rem); line-height: 1.7; }
@@ -47,8 +50,10 @@ h1 { margin: 12px 0 16px; font-size: clamp(2.5rem, 9vw, 5.4rem); line-height: 0.
 .article-header h1 { font-size: clamp(2.2rem, 7vw, 4rem); line-height: 0.95; }
 .article-meta { color: var(--muted); margin: 0 0 20px; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.button { border: 1px solid var(--border); background: rgba(255,255,255,.08); color: var(--text); border-radius: 999px; padding: 10px 14px; cursor: pointer; text-decoration: none; font: inherit; }
+.button { border: 1px solid var(--border); background: rgba(255,255,255,.08); color: var(--text); border-radius: 999px; padding: 10px 14px; cursor: pointer; text-decoration: none; font: inherit; display: inline-flex; align-items: center; justify-content: center; }
 .button:hover { border-color: rgba(120,219,255,.5); }
+.button.primary { background: linear-gradient(135deg, rgba(120,219,255,.25), rgba(183,243,107,.18)); border-color: rgba(120,219,255,.45); }
+.button.danger { color: var(--danger); }
 .prose { padding: 30px; border: 1px solid var(--border); border-radius: 28px; background: rgba(5, 8, 18, 0.62); line-height: 1.75; font-size: 1.06rem; }
 .prose h1, .prose h2, .prose h3 { letter-spacing: -0.04em; line-height: 1.1; }
 .prose h1 { font-size: 2.2rem; }
@@ -60,4 +65,22 @@ h1 { margin: 12px 0 16px; font-size: clamp(2.5rem, 9vw, 5.4rem); line-height: 0.
 .prose pre code { background: transparent; padding: 0; }
 .empty { padding: 28px; border: 1px dashed var(--border); border-radius: 24px; color: var(--muted); }
 .footer { padding: 36px 0 60px; color: var(--muted); font-size: .92rem; }
-@media (max-width: 560px) { .hero { padding-top: 44px; } .article-header, .prose { padding: 20px; border-radius: 22px; } }
+.admin-shell { padding-bottom: 72px; }
+.admin-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(280px, .8fr); gap: 18px; align-items: start; }
+.panel { border: 1px solid var(--border); border-radius: 28px; background: rgba(5, 8, 18, 0.62); box-shadow: var(--shadow); padding: 22px; }
+.editor-panel { display: grid; gap: 14px; }
+.row { display: grid; grid-template-columns: 1fr 150px; gap: 12px; }
+label { display: grid; gap: 7px; color: var(--muted); font-weight: 700; font-size: .92rem; }
+input, textarea, select { width: 100%; border: 1px solid var(--border); border-radius: 14px; background: rgba(255,255,255,.08); color: var(--text); padding: 11px 12px; font: inherit; }
+textarea { min-height: 360px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; line-height: 1.55; }
+input[type="file"] { padding: 10px; }
+.status { min-height: 1.4em; color: var(--accent-2); }
+.status[data-error="true"] { color: var(--danger); }
+.list-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
+.list-head h2 { margin: 0; }
+.doc-list { display: grid; gap: 10px; }
+.doc-item { text-align: left; color: var(--text); border: 1px solid var(--border); border-radius: 16px; padding: 12px; background: rgba(255,255,255,.06); cursor: pointer; }
+.doc-item strong, .doc-item span { display: block; }
+.doc-item span { color: var(--accent); font-size: .9rem; margin-top: 4px; }
+@media (max-width: 800px) { .admin-grid, .row { grid-template-columns: 1fr; } }
+@media (max-width: 560px) { .hero { padding-top: 44px; } .article-header, .prose, .panel { padding: 20px; border-radius: 22px; } }
