@@ -237,6 +237,66 @@ test("client script drops the add-file affordance", () => {
   assert.doesNotMatch(js, /#add-file/);
 });
 
+// --- Responsive layout polish: tablet hero/options + mobile spacing ---------
+
+test("tablet (<=1180) stacks the hero so actions don't float in empty space", () => {
+  const css = readFileSync(file("src", "styles", "global.css"), "utf8");
+  const tablet = css.match(/@media \(max-width: 1180px\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(tablet, "a <=1180px media query should exist");
+  const block = tablet[0];
+  // hero collapses to a single column and the action cluster aligns to the start
+  assert.match(block, /\.od-hero-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
+  assert.match(block, /\.od-hero-actions\s*\{[^}]*justify-items:\s*start/);
+});
+
+test("tablet (<=1180) renders options as a compact 2-column form, not a 3-up strip", () => {
+  const css = readFileSync(file("src", "styles", "global.css"), "utf8");
+  const tablet = css.match(/@media \(max-width: 1180px\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(tablet, "a <=1180px media query should exist");
+  const block = tablet[0];
+  // two-column grid spanning the full row
+  assert.match(block, /\.options-panel\s*\{[^}]*grid-column:\s*1 \/ -1/);
+  assert.match(block, /\.options-panel\s*\{[^}]*grid-template-columns:\s*repeat\(2,/);
+  // the password toggle stays in the first column with a comfortable hit area;
+  // hidden password field + helper text span full width when needed
+  assert.match(block, /\.options-panel \.switch-row\s*\{[^}]*display:\s*inline-flex/);
+  assert.match(block, /\.options-panel \.switch-row\s*\{[^}]*gap:\s*12px/);
+  assert.match(block, /\.options-panel \.switch-row\s*\{[^}]*min-height:\s*48px/);
+  assert.match(block, /\.options-panel #password-row,[\s\S]*?\.options-panel \.meta,[\s\S]*?grid-column:\s*1 \/ -1/);
+  // the old awkward 3-equal-column strip is gone everywhere
+  assert.doesNotMatch(css, /grid-template-columns:\s*1fr 1fr 1fr/);
+});
+
+test("narrow screens (<=900) collapse options to a single column", () => {
+  const css = readFileSync(file("src", "styles", "global.css"), "utf8");
+  const narrow = css.match(/@media \(max-width: 900px\)\s*\{[\s\S]*?\n\}/);
+  assert.ok(narrow, "a <=900px media query should exist");
+  assert.match(narrow[0], /\.options-panel\s*\{[^}]*grid-template-columns:\s*1fr/);
+});
+
+test("mobile keeps Create Share after options, in-flow, and full-width", () => {
+  const source = readFileSync(file("src", "pages", "index.astro"), "utf8");
+  assert.ok(
+    source.indexOf("class=\"options-panel") < source.indexOf("class=\"mobile-action-bar"),
+    "mobile Create Share action should come after share options in the form flow"
+  );
+  assert.doesNotMatch(source, /mobile-action-bar[\s\S]*README\.md/);
+
+  const css = readFileSync(file("src", "styles", "global.css"), "utf8");
+  // action bar surfaces in normal flow at <=900, after editor/options, not as a floating overlay
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*?\.mobile-action-bar\s*\{[^}]*display:\s*flex/);
+  assert.match(css, /\.mobile-action-bar\s*\{[^}]*grid-column:\s*1 \/ -1/);
+  assert.match(css, /\.mobile-action-bar\s*\{[^}]*order:\s*4/);
+  assert.doesNotMatch(css, /\.mobile-action-bar\s*\{[^}]*position:\s*fixed/s);
+  assert.match(css, /\.mobile-action-bar \.button\s*\{[^}]*width:\s*100%/);
+  assert.match(css, /\.mobile-action-bar \.button\s*\{[^}]*min-height:\s*48px/);
+  // <=640 keeps options/create before the live preview so the submit action stays near the form controls
+  const phone = css.match(/@media \(max-width: 640px\)\s*\{[\s\S]*?\n\}/)[0];
+  assert.match(phone, /\.od-workspace\s*\{[^}]*gap:\s*10px/);
+  assert.match(phone, /\.options-panel\s*\{[^}]*order:\s*3/);
+  assert.match(phone, /\.preview-panel\s*\{[^}]*order:\s*5/);
+});
+
 // --- T5.1: README and astro.config agree on a single domain ----------------
 
 test("README and astro.config use one consistent domain", () => {

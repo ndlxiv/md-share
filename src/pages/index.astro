@@ -40,10 +40,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <span class="od-pill">Markdown</span>
         </div>
         <textarea id="markdown-input" placeholder="Enter your markdown here..." spellcheck="false"></textarea>
-        <div class="mobile-action-bar">
-          <span class="od-status">README.md</span>
-          <button id="create-share-mobile" class="button primary" type="button" disabled>Create Share</button>
-        </div>
       </section>
 
       <section class="preview-panel od-card" aria-label="Preview markdown">
@@ -75,6 +71,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </label>
         <p class="meta">Share will be automatically deleted after the selected time.</p>
       </aside>
+
+      <div class="mobile-action-bar" aria-label="Create share action">
+        <button id="create-share-mobile" class="button primary" type="button" disabled>Create Share</button>
+      </div>
     </section>
 
     <section id="created-panel" class="created-panel od-card" hidden aria-live="polite">
