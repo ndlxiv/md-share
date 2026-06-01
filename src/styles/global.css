@@ -139,6 +139,7 @@ input[type="file"] { padding: 10px; }
 .prose h2 { margin-top: 2rem; font-size: 1.55rem; }
 .prose p, .prose li, .prose blockquote { color: #2c2c2c; }
 .prose blockquote { margin: 1.5rem 0; padding: 1rem 1.2rem; border-left: 4px solid var(--od-accent); background: var(--od-accent-soft); border-radius: 12px; }
+.prose hr { border: 0; border-top: 1px solid var(--od-border); margin: 2rem 0; }
 .prose code { background: #f0f0f0; padding: .15rem .35rem; border-radius: .4rem; }
 .prose table { width: 100%; border-collapse: separate; border-spacing: 0; margin: 1.25rem 0; overflow: hidden; border-radius: 14px; box-shadow: var(--od-shadow-border); }
 .prose th, .prose td { padding: .82rem .95rem; border-bottom: 1px solid var(--od-border); text-align: left; vertical-align: top; }

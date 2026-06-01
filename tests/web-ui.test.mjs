@@ -46,6 +46,25 @@ test("markdown renderer preserves tables, ordered lists, and richer inline forma
   assert.doesNotMatch(html, /\| Metric \|/);
 });
 
+test("markdown renderer turns section dividers into horizontal rules", async () => {
+  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const html = mod.renderMarkdown(`Intro\n\n---\n\nNext section\n\n***\n\nFinal section`);
+
+  assert.match(html, /<p>Intro<\/p>\n<hr>\n<p>Next section<\/p>\n<hr>\n<p>Final section<\/p>/);
+  assert.doesNotMatch(html, /<p>---<\/p>/);
+  assert.doesNotMatch(html, /<p>\*\*\*<\/p>/);
+});
+
+test("markdown renderer hides frontmatter from preview output", async () => {
+  const mod = await import(pathToFileURL(join(root, "functions", "_lib", "markdown.js")));
+  const html = mod.renderMarkdown(`---\r\ntitle: Hidden Metadata\r\ndescription: Should not render\r\n---\r\n# Visible Title`);
+
+  assert.match(html, /<h1 id="visible-title">Visible Title<\/h1>/);
+  assert.doesNotMatch(html, /Hidden Metadata/);
+  assert.doesNotMatch(html, /Should not render/);
+  assert.doesNotMatch(html, /<p>---<\/p>/);
+});
+
 test("admin API functions require bearer auth for writes", () => {
   const collectionApi = read("functions", "api", "docs", "index.js");
   const itemApi = read("functions", "api", "docs", "[slug].js");

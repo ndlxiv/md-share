@@ -31,6 +31,8 @@ const isTableDelimiter = (line = "") =>
 
 const isTableRow = (line = "") => line.includes("|") && !/^\s*```/.test(line);
 
+const isHorizontalRule = (line = "") => /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line);
+
 function splitTableRow(line = "") {
   const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
   return trimmed.split("|").map((cell) => cell.trim());
@@ -49,7 +51,7 @@ function tableAlignments(delimiter = "") {
 const alignClass = (align) => (align === "right" || align === "center" ? ` class="align-${align}"` : "");
 
 export function renderMarkdown(markdown = "") {
-  const normalized = String(markdown).replace(/\r\n/g, "\n");
+  const normalized = stripFrontmatter(markdown).body;
   const lines = normalized.split("\n");
   const html = [];
   let paragraph = [];
@@ -128,6 +130,12 @@ export function renderMarkdown(markdown = "") {
       continue;
     }
 
+    if (isHorizontalRule(line)) {
+      flushBlocks();
+      html.push("<hr>");
+      continue;
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
     if (heading) {
       flushBlocks();
@@ -166,7 +174,7 @@ export function renderMarkdown(markdown = "") {
 }
 
 export function stripFrontmatter(markdown = "") {
-  const text = String(markdown).replace(/^\uFEFF/, "");
+  const text = String(markdown).replace(/\r\n/g, "\n").replace(/^\uFEFF/, "");
   if (!text.startsWith("---\n")) return { data: {}, body: text };
   const end = text.indexOf("\n---", 4);
   if (end === -1) return { data: {}, body: text };

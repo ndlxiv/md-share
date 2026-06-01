@@ -51,6 +51,16 @@ const isTableDelimiter = (line = "") =>
 
 const isTableRow = (line = "") => line.includes("|") && !/^\s*```/.test(line);
 
+const isHorizontalRule = (line = "") => /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/.test(line);
+
+function stripFrontmatter(markdown = "") {
+  const text = String(markdown).replace(/\r\n/g, "\n").replace(/^\uFEFF/, "");
+  if (!text.startsWith("---\n")) return { body: text };
+  const end = text.indexOf("\n---", 4);
+  if (end === -1) return { body: text };
+  return { body: text.slice(end + 4).replace(/^\n/, "") };
+}
+
 function splitTableRow(line = "") {
   const trimmed = line.trim().replace(/^\|/, "").replace(/\|$/, "");
   return trimmed.split("|").map((cell) => cell.trim());
@@ -69,7 +79,7 @@ function tableAlignments(delimiter = "") {
 const alignClass = (align) => (align === "right" || align === "center" ? ` class="align-${align}"` : "");
 
 function renderMarkdown(markdown = "") {
-  const normalized = String(markdown).replace(/\r\n/g, "\n");
+  const normalized = stripFrontmatter(markdown).body;
   const lines = normalized.split("\n");
   const html = [];
   let paragraph = [];
@@ -145,6 +155,12 @@ function renderMarkdown(markdown = "") {
       flushBlocks();
       html.push(table.html);
       index = table.nextIndex - 1;
+      continue;
+    }
+
+    if (isHorizontalRule(line)) {
+      flushBlocks();
+      html.push("<hr>");
       continue;
     }
 
