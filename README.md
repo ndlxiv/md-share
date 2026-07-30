@@ -1,6 +1,7 @@
 # MD Share
 
 Simple anonymous Markdown sharing app.
+https://md-share-6y3.pages.dev/
 
 ## What it does
 
