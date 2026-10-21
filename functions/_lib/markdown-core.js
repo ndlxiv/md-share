@@ -1,10 +1,9 @@
 // Shared, marked-agnostic Markdown sanitizer + render pipeline.
 //
-// This is the CANONICAL source of truth. A byte-identical copy is vendored at
-// public/vendor/markdown-core.mjs for the in-browser preview; the parity guard
-// in tests/web-ui.test.mjs fails if the two ever drift apart. Keep this module
-// free of any runtime-specific imports (no `marked`, no Node APIs) so both the
-// Cloudflare Function and the browser can share it — `marked` is passed in.
+// This is the single source of truth: the Cloudflare Function imports it
+// directly and the homepage React island bundles it through Vite. Keep this
+// module free of any runtime-specific imports (no `marked`, no Node APIs) so
+// both runtimes can share it — `marked` is passed in.
 
 export const escapeHtml = (value = "") =>
   String(value)
@@ -56,7 +55,17 @@ function safeUrl(value = "", { image = false } = {}) {
   return "";
 }
 
-function sanitizeAttributes(tag, rawAttrs = "") {
+// Relative links (`setup.md`, `./guide.md#install`) are dropped unless the
+// caller supplies a resolver, which maps them onto another file of the same
+// share. The resolver may only return same-origin paths or fragments.
+function resolveRelative(value, resolveLink) {
+  const trimmed = String(value).trim();
+  if (!resolveLink || !trimmed || /^[a-z][a-z0-9+.-]*:/i.test(trimmed) || trimmed.startsWith("//")) return "";
+  const resolved = resolveLink(trimmed);
+  return typeof resolved === "string" && /^[/#]/.test(resolved) && !resolved.startsWith("//") ? resolved : "";
+}
+
+function sanitizeAttributes(tag, rawAttrs = "", options = {}) {
   const allowed = new Set([...(tagAttrs[tag] || []), ...globalAttrs]);
   const attrs = [];
   for (const match of rawAttrs.matchAll(/([:@A-Za-z0-9_-]+)(?:\s*=\s*("[^"]*"|'[^']*'|[^\s"'`=<>]+))?/g)) {
@@ -65,7 +74,8 @@ function sanitizeAttributes(tag, rawAttrs = "") {
     let value = match[2] || "";
     value = value.replace(/^['"]|['"]$/g, "");
     if ((tag === "a" && name === "href") || (tag === "img" && name === "src")) {
-      value = safeUrl(value, { image: tag === "img" });
+      const safe = safeUrl(value, { image: tag === "img" });
+      value = safe || (tag === "a" ? resolveRelative(value, options.resolveLink) : "");
       if (!value) continue;
     }
     if (tag === "input") {
@@ -97,7 +107,7 @@ function sanitizeAttributes(tag, rawAttrs = "") {
   return attrs.length ? ` ${attrs.join(" ")}` : "";
 }
 
-export function sanitizeHtml(html = "") {
+export function sanitizeHtml(html = "", options = {}) {
   return String(html)
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<\/?(?:script|style|iframe|object|embed|form)[\s\S]*?>/gi, (tag) => escapeHtml(tag))
@@ -105,7 +115,7 @@ export function sanitizeHtml(html = "") {
       const tag = rawTag.toLowerCase();
       if (!allowedTags.has(tag)) return escapeHtml(full);
       if (full.startsWith("</")) return `</${tag}>`;
-      return `<${tag}${sanitizeAttributes(tag, rawAttrs)}>`;
+      return `<${tag}${sanitizeAttributes(tag, rawAttrs, options)}>`;
     });
 }
 
@@ -146,10 +156,10 @@ function addHeadingIds(html = "") {
   });
 }
 
-// `marked` is injected so this module stays runtime-agnostic: the server passes
-// the npm build, the browser passes the vendored ESM build.
-export function renderMarkdown(marked, markdown = "") {
+// `marked` is injected so this module stays runtime-agnostic. `options.resolveLink`
+// rewrites relative links between files of a multi-file share.
+export function renderMarkdown(marked, markdown = "", options = {}) {
   const { body } = stripFrontmatter(markdown);
   const raw = marked.parse(body, { async: false, breaks: false, gfm: true });
-  return normalizeRenderedHtml(addHeadingIds(sanitizeHtml(raw)));
+  return normalizeRenderedHtml(addHeadingIds(sanitizeHtml(raw, options)));
 }

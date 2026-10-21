@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /s/
+Disallow: /e/
+Disallow: /edit/
+Disallow: /api/
+
+Sitemap: https://md-share-6y3.pages.dev/sitemap-index.xml

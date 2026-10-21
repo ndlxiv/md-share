@@ -1,0 +1,8 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ShareComposer from "../components/ShareComposer";
+---
+<BaseLayout title="Edit share" description="Edit a Markdown share with its edit code." noindex>
+  <a slot="nav" class="button sm" href="/">New share</a>
+  <ShareComposer client:load mode="edit" />
+</BaseLayout>

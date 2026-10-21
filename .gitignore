@@ -4,3 +4,7 @@ dist/
 .env
 .env.*
 .DS_Store
+.wrangler/
+.playwright-mcp/
+test-results/
+playwright-report/

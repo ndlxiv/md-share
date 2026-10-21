@@ -7,8 +7,8 @@ import {
   stripFrontmatter,
 } from "./markdown-core.js";
 
-export function renderMarkdown(markdown = "") {
-  return renderMarkdownWithMarked(marked, markdown);
+export function renderMarkdown(markdown = "", options = {}) {
+  return renderMarkdownWithMarked(marked, markdown, options);
 }
 
 export { escapeHtml, sanitizeHtml, slugify, stripFrontmatter };

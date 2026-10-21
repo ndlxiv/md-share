@@ -1,23 +1,28 @@
 ---
+import "../styles/shared.css";
 import "../styles/global.css";
 
 interface Props {
   title?: string;
   description?: string;
+  noindex?: boolean;
 }
 
 const {
-  title = "MD Share",
-  description = "Share Markdown files as clean public pages.",
+  title,
+  description = "Write or drop Markdown files, preview them live, and share one clean link.",
+  noindex = false,
 } = Astro.props;
-const pageTitle = title === "MD Share" ? title : `${title} · MD Share`;
+const pageTitle = title ? `${title} · MDShare` : "MDShare: share Markdown in one link";
 ---
 <!doctype html>
-<html lang="vi">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content={description} />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#fafafa" />
+    {noindex && <meta name="robots" content="noindex,nofollow" />}
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
@@ -25,15 +30,18 @@ const pageTitle = title === "MD Share" ? title : `${title} · MD Share`;
     <title>{pageTitle}</title>
   </head>
   <body>
+    <a class="skip-link" href="#content">Skip to content</a>
     <header class="site-header">
       <nav class="container nav" aria-label="Main navigation">
         <a class="brand" href="/">MD<span>Share</span></a>
         <div class="nav-actions">
+          <slot name="nav" />
           <a class="nav-link" href="https://github.com/ndlxiv/md-share" target="_blank" rel="noreferrer">GitHub</a>
         </div>
       </nav>
     </header>
-    <slot />
-    <footer class="container footer">Free static Markdown sharing powered by Astro + Cloudflare Pages.</footer>
+    <main id="content" class="app-shell">
+      <slot />
+    </main>
   </body>
 </html>

@@ -140,48 +140,43 @@ test("sanitizer neutralises svg/onload and comment-smuggled markup", async () =>
   assert.doesNotMatch(commented, /onerror/i);
 });
 
-// --- T3.1: a single source of truth for the renderer/sanitizer ---
+// --- Single source of truth for the renderer -------------------------------
 
-test("server and client share one marked-agnostic renderer core", () => {
+test("server Function and browser editor import the same marked-agnostic core", () => {
   const serverModule = normalizeSource(readFileSync(file("functions", "_lib", "markdown.js"), "utf8"));
-  const clientModule = normalizeSource(readFileSync(file("public", "share.js"), "utf8"));
-
-  // both runtimes import the shared core instead of redefining the sanitizer
+  const clientModule = normalizeSource(readFileSync(file("src", "lib", "markdown.ts"), "utf8"));
   assert.match(serverModule, /from ["']\.\/markdown-core\.js["']/);
-  assert.match(clientModule, /from ["']\.\/vendor\/markdown-core\.mjs["']/);
-
-  // the ~120 lines of copy-pasted sanitizer logic no longer live in the client script
-  assert.doesNotMatch(clientModule, /function sanitizeHtml/);
-  assert.doesNotMatch(clientModule, /function sanitizeAttributes/);
-  assert.doesNotMatch(clientModule, /const allowedTags = new Set/);
+  assert.match(clientModule, /from ["']\.\.\/\.\.\/functions\/_lib\/markdown-core\.js["']/);
 });
 
-test("the vendored client core stays byte-identical to the canonical core (drift guard)", () => {
-  const canonical = normalizeSource(readFileSync(file("functions", "_lib", "markdown-core.js"), "utf8"));
-  const vendored = normalizeSource(readFileSync(file("public", "vendor", "markdown-core.mjs"), "utf8"));
-  assert.equal(
-    vendored,
-    canonical,
-    "public/vendor/markdown-core.mjs must be a verbatim copy of functions/_lib/markdown-core.js"
+// --- Multi-file links ----------------------------------------------------
+
+test("relative links between files resolve through the provided resolver", async () => {
+  const { renderMarkdown } = await loadRenderer();
+  const { createFileLinkResolver } = await import(pathToFileURL(file("functions", "_lib", "files-core.js")));
+  const resolveLink = createFileLinkResolver(["Guide.md", "Set Up.md"], (slug, hash) => `/s/x/${slug}${hash ? `#${hash}` : ""}`);
+  const html = renderMarkdown(
+    "[a](./guide.md) [b](Set%20Up.md#install) [c](../set up) [d](missing.md) [e](https://example.com) [f](javascript:alert(1))",
+    { resolveLink }
   );
+  assert.match(html, /<a href="\/s\/x\/guide">a<\/a>/);
+  assert.match(html, /<a href="\/s\/x\/set-up#install">b<\/a>/);
+  assert.match(html, /<a>d<\/a>/, "unknown files lose their href instead of breaking");
+  assert.match(html, /href="https:\/\/example\.com"/);
+  assert.doesNotMatch(html, /javascript:/);
 });
 
-test("server and client renderers produce identical HTML for the same input", async () => {
-  const server = await loadRenderer();
-  const { marked } = await import(pathToFileURL(file("public", "vendor", "marked.esm.mjs")));
-  const core = await import(pathToFileURL(file("public", "vendor", "markdown-core.mjs")));
+test("a resolver cannot inject off-site or scriptable URLs", async () => {
+  const { renderMarkdown } = await loadRenderer();
+  const html = renderMarkdown("[x](a.md) [y](b.md)", { resolveLink: (href) => (href === "a.md" ? "javascript:alert(1)" : "//evil.test") });
+  assert.doesNotMatch(html, /javascript:|evil\.test/);
+});
 
-  const samples = [
-    "# Title\n\nHello **world** with `code` and ~~strike~~.",
-    "| A | B |\n|---|--:|\n| 1 | 2 |\n\n- [x] done\n- [ ] todo",
-    "Press <kbd>Ctrl</kbd>+<kbd>C</kbd>. E=mc<sup>2</sup>, H<sub>2</sub>O, <mark>hi</mark>.",
-    "<details>\n<summary>More</summary>\n\nBody\n\n</details>\n\n<script>alert(1)</script>",
-    "[link](https://example.com) and ![img](https://example.com/a.png)",
-  ];
-
-  for (const sample of samples) {
-    const serverHtml = server.renderMarkdown(sample);
-    const clientHtml = core.renderMarkdown(marked, sample);
-    assert.equal(clientHtml, serverHtml, `renderer drift for input: ${JSON.stringify(sample)}`);
-  }
+test("file helpers de-duplicate names and slugs deterministically", async () => {
+  const { dedupeFilenames, assignFileSlugs, defaultFilename, safeFilename } = await import(pathToFileURL(file("functions", "_lib", "files-core.js")));
+  assert.deepEqual(dedupeFilenames(["a.md", "A.md", "a.md"]), ["a.md", "A-2.md", "a-3.md"]);
+  assert.deepEqual(assignFileSlugs(["Read Me.md", "read-me.markdown", "###.md"]), ["read-me", "read-me-2", "section"]);
+  assert.equal(defaultFilename("---\ntitle: From Front\n---\n# Heading"), "From Front.md");
+  assert.equal(defaultFilename("", 2), "untitled-3.md");
+  assert.equal(safeFilename("../evil:name"), "..-evil-name.md");
 });
