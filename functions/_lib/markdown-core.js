@@ -3,7 +3,7 @@
 // This is the single source of truth: the Cloudflare Function imports it
 // directly and the homepage React island bundles it through Vite. Keep this
 // module free of any runtime-specific imports (no `marked`, no Node APIs) so
-// both runtimes can share it — `marked` is passed in.
+// both runtimes can share it; `marked` is passed in.
 
 export const escapeHtml = (value = "") =>
   String(value)
@@ -43,7 +43,7 @@ function safeUrl(value = "", { image = false } = {}) {
   try {
     const url = new URL(trimmed);
     // data: URLs are only ever allowed for images, and only for image/* media
-    // types — data:text/html and friends are classic XSS vectors.
+    // types: data:text/html and friends are classic XSS vectors.
     if (url.protocol === "data:") {
       return image && /^data:image\//i.test(trimmed) ? trimmed : "";
     }

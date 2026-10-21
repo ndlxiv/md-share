@@ -117,7 +117,7 @@ test("sanitizer blocks dangerous URL schemes and restricts data: URLs to images"
   const jsLink = mod.renderMarkdown(`[click](javascript:alert(1))`);
   assert.doesNotMatch(jsLink, /javascript:/i);
 
-  // data:text/html is a classic XSS payload — never allowed, even on an image
+  // data:text/html is a classic XSS payload, never allowed, even on an image
   const htmlData = mod.renderMarkdown(`![x](data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==)`);
   assert.doesNotMatch(htmlData, /data:text\/html/i);
 

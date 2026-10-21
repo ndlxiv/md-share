@@ -303,7 +303,7 @@ test("?download=zip returns a valid stored zip of every file", async () => {
 
 test("zip CRC-32 matches zlib", async () => {
   const { crc32 } = await loadZip();
-  const data = new TextEncoder().encode("# Hello, Markdown — tiếng Việt");
+  const data = new TextEncoder().encode("# Hello, Markdown: tiếng Việt");
   assert.equal(crc32(data), zlibCrc32(data));
 });
 

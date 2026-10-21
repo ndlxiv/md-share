@@ -1,6 +1,6 @@
 // Owner-only management of a share, authorised by the edit code handed out
-// once at creation. The code travels in the `x-edit-code` header — never in
-// the URL — so it stays out of logs and history.
+// once at creation. The code travels in the `x-edit-code` header, never in
+// the URL, so it stays out of logs and history.
 import { json, methodNotAllowed, readJson, timingSafeEqual } from "../../_lib/api.js";
 import { hashEditCode } from "../../_lib/edit-code.js";
 import {

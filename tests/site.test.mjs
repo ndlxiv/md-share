@@ -37,10 +37,10 @@ test("project keeps the Astro + React + Pages Functions structure", () => {
   assert.match(read("astro.config.mjs"), /@astrojs\/react/);
 });
 
-test("no emoji or pictographic icon characters in UI source", () => {
-  const pictographic = /[\p{Extended_Pictographic}\u{FF0B}\u{2713}\u{2714}]/u;
-  const sources = [...walk(file("src")), ...walk(file("functions")), ...walk(file("public"))].filter((path) =>
-    /\.(astro|tsx?|jsx?|mjs|css|html|txt)$/.test(path)
+test("no emoji, pictographic icon characters or em/en dashes in source", () => {
+  const pictographic = /[\p{Extended_Pictographic}\u{FF0B}\u{2713}\u{2714}\u{2013}\u{2014}]|&[mn]dash;/u;
+  const sources = [...walk(file("src")), ...walk(file("functions")), ...walk(file("public")), ...walk(file("tests")), ...walk(file("docs")), file("README.md")].filter(
+    (path) => /\.(astro|tsx?|jsx?|mjs|css|html|txt|md)$/.test(path)
   );
   const offenders = sources.filter((path) => pictographic.test(readFileSync(path, "utf8"))).map((path) => relative(root, path));
   assert.deepEqual(offenders, []);
